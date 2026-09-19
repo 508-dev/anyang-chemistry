@@ -54,6 +54,24 @@ Saves contain only the ordered list of discoveries. Scores, trophies, end
 points, and hints are all derived, so saves stay tiny and survive data
 updates. Ids that no longer exist are dropped when a save is restored.
 
+## Scripts
+
+Simplified and traditional are separate games. `new RecipeBook(data, { script })`
+removes the other script's elements, then re-runs reachability from the
+strokes. Anything that could only be built through the other script is gone
+too, along with its depth, end points and collection members. Each script has
+its own save. Shapes that shared characters need (幺 in 幼) are marked `both`
+in `data/curated/scripts.tsv`.
+
+## Hints
+
+Typing a single character into the search box shows `howToMake()`: a
+construction tree that follows the shallowest recipe at each step. It stops at
+pieces the player already has and labels each part with its zone
+(左右上下, or 合/叠/外 for center drops). Components with no gloss (𠂉) are
+described by the characters they help build. Strokes that are also characters
+keep their reading, so 一 is found by "yi" or "one".
+
 ## Scoring and end points
 
 - **Discovered**: count out of all reachable elements.
@@ -100,8 +118,6 @@ then tapping a zone also works.
 
 ## Open questions
 
-- Simplified vs traditional: both are in the data today. A script setting
-  (and a data flag per element) would cut clutter.
 - Multi-character words (火 + 山 → 火山) as a tier above characters.
 - Commonness data (HSK or a frequency list) to rank hints and trophies.
 - A bundled font subset, so rare components (𠂉, CJK stroke glyphs) render the

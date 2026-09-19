@@ -1,5 +1,5 @@
 <script lang="ts">
-import { score } from "@anyang/core";
+import { type Script, score } from "@anyang/core";
 import Board from "./components/Board.svelte";
 import Details from "./components/Details.svelte";
 import Notices from "./components/Notices.svelte";
@@ -7,10 +7,23 @@ import Palette from "./components/Palette.svelte";
 import Trophies from "./components/Trophies.svelte";
 import { drag } from "./lib/drag.svelte";
 import { loadGame } from "./lib/game.svelte";
-import { localSaveStore } from "./lib/storage";
+import { loadScript, saveScript } from "./lib/storage";
 
-const loading = loadGame(localSaveStore);
+// Each script is a separate game: the other script's characters don't exist in
+// it, and progress is saved per script.
+let script = $state<Script>(loadScript());
+const loading = $derived(loadGame(script));
 let showTrophies = $state(false);
+
+const SCRIPTS: { value: Script; label: string; title: string }[] = [
+  { value: "simplified", label: "简", title: "简体 Simplified" },
+  { value: "traditional", label: "繁", title: "繁體 Traditional" },
+];
+
+function chooseScript(next: Script) {
+  script = next;
+  saveScript(next);
+}
 </script>
 
 {#await loading}
@@ -19,7 +32,21 @@ let showTrophies = $state(false);
   {@const stats = score(game.book, game.progress)}
   <div class="app">
     <header class="top">
-      <h1>安阳字炼 <small>Anyang Chemistry</small></h1>
+      <h1>{script === "traditional" ? "安陽字煉" : "安阳字炼"} <small>Anyang Chemistry</small></h1>
+      <div class="script" role="radiogroup" aria-label="Script">
+        {#each SCRIPTS as option (option.value)}
+          <button
+            type="button"
+            role="radio"
+            aria-checked={script === option.value}
+            title={option.title}
+            class:active={script === option.value}
+            onclick={() => chooseScript(option.value)}
+          >
+            {option.label}
+          </button>
+        {/each}
+      </div>
       <button type="button" class="stats" onclick={() => (showTrophies = true)}>
         <span><strong>{stats.discovered}</strong>/{stats.total}</span>
         <span class="terminals">终 {stats.terminals.found}</span>
@@ -75,6 +102,27 @@ let showTrophies = $state(false);
     font-size: 0.75rem;
     color: var(--muted);
     font-weight: 400;
+  }
+  .script {
+    display: flex;
+    margin-left: auto;
+    margin-right: 0.5rem;
+  }
+  .script button {
+    font-family: var(--glyph-font);
+    padding: 0.25rem 0.6rem;
+  }
+  .script button:first-child {
+    border-radius: 999px 0 0 999px;
+  }
+  .script button:last-child {
+    border-radius: 0 999px 999px 0;
+    border-left: none;
+  }
+  .script .active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
   }
   .stats {
     display: flex;

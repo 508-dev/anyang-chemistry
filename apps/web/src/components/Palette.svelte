@@ -1,6 +1,7 @@
 <script lang="ts">
 import type { ElementKind } from "@anyang/core";
 import type { Game } from "../lib/game.svelte";
+import HowTo from "./HowTo.svelte";
 import Tile from "./Tile.svelte";
 
 let { game }: { game: Game } = $props();
@@ -22,6 +23,14 @@ let sort = $state<Sort>("found");
 /** Lowercase pinyin without tone marks, so "nai" finds nǎi. */
 const plain = (text: string) => text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
+/** A single Han character in the search box also answers "how do I make it?". */
+const lookup = $derived.by(() => {
+  const chars = Array.from(query.trim());
+  return chars.length === 1 && /\p{Script=Han}|[\u2e80-\u2fdf\u31c0-\u31ef]/u.test(chars[0] ?? "")
+    ? chars[0]
+    : undefined;
+});
+
 const ids = $derived.by(() => {
   const needle = plain(query.trim());
   const list = game.progress.discoveries
@@ -34,12 +43,14 @@ const ids = $derived.by(() => {
       return (
         id === query.trim() ||
         info.pinyin.some((reading) => plain(reading).startsWith(needle)) ||
-        plain(info.gloss).includes(needle) ||
+        plain(info.gloss)
+          .split(/[^a-z]+/)
+          .some((word) => word.startsWith(needle)) ||
         (info.name ?? "").includes(query.trim())
       );
     });
   if (sort === "depth") {
-    list.sort((a, b) => (game.book.element(a)?.depth ?? 0) - (game.book.element(b)?.depth ?? 0));
+    list.sort((a, b) => (game.book.depth(a) ?? 0) - (game.book.depth(b) ?? 0));
   } else {
     // Strokes stay first; newest discoveries come next.
     const strokes = list.filter((id) => game.book.element(id)?.kind === "stroke");
@@ -71,6 +82,9 @@ const ids = $derived.by(() => {
       </button>
     {/each}
   </div>
+  {#if lookup}
+    <HowTo {game} char={lookup} />
+  {/if}
   <div class="grid">
     {#each ids as id (id)}
       <Tile {game} {id} />

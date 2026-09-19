@@ -1,0 +1,16 @@
+# Script overrides for elements Unihan misclassifies or does not cover.
+# Columns: element, simplified | traditional | both.
+# Unlisted elements use Unihan kSimplifiedVariant/kTraditionalVariant.
+幺	both	shape in 幼 玄 糸
+习	both	shape in 羽
+关	both	shape in 送 朕
+离	both	shape in 璃 禽 篱
+吕	both	shape in 串
+刍	both	shape in 急
+巩	both	shape in 恐 筑
+杀	both	shape in 刹
+处	both	shape in 咎
+囱	both	shape in 窗
+圣	both	shape in 怪
+虽	both	shape in 强
+产	both	shape in 彦

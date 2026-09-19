@@ -54,6 +54,8 @@ const ENCLOSURE_CLASS: Partial<Record<Layout, string>> = {
     width: 100%;
     height: 100%;
     display: grid;
+    /* Fixed tracks: content-sized ones overflow in small boxes. */
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
     place-items: center;
     overflow: hidden;
   }

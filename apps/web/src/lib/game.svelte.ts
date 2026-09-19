@@ -7,10 +7,11 @@ import {
   Progress,
   placePiece,
   RecipeBook,
+  type Script,
   type Zone,
 } from "@anyang/core";
 import gameDataUrl from "@anyang/data/game-data.json?url";
-import type { SaveStore } from "./storage";
+import { localSaveStore, type SaveStore } from "./storage";
 
 export type Notice =
   | { key: number; kind: "discovery"; id: string }
@@ -18,10 +19,22 @@ export type Notice =
 
 export type Feedback = { key: number; kind: "rejected" | "known"; text: string } | null;
 
-export async function loadGame(store: SaveStore): Promise<Game> {
-  const response = await fetch(gameDataUrl);
-  if (!response.ok) throw new Error(`Could not load game data (${response.status})`);
-  const book = new RecipeBook((await response.json()) as GameData);
+let gameData: Promise<GameData> | undefined;
+
+function fetchGameData(): Promise<GameData> {
+  gameData ??= fetch(gameDataUrl).then((response) => {
+    if (!response.ok) throw new Error(`Could not load game data (${response.status})`);
+    return response.json() as Promise<GameData>;
+  });
+  return gameData;
+}
+
+/** A game plays one script; the other script's characters do not exist in it. */
+export async function loadGame(
+  script: Script,
+  store: SaveStore = localSaveStore(script),
+): Promise<Game> {
+  const book = new RecipeBook(await fetchGameData(), { script });
   return new Game(book, store, Progress.restore(book, await store.load()));
 }
 

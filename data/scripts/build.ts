@@ -20,7 +20,9 @@ import {
   parseIds,
   partPosition,
   type RecipeTuple,
+  reachable,
   recipeKey,
+  type Script,
   type VariantForm,
 } from "@anyang/core";
 
@@ -185,64 +187,51 @@ for (const { result, tree, curated } of raw) {
   flatRecipes.push({ result, layout: flat.layout, parts: flat.parts });
 }
 
-// 3. Reachability from the strokes. A part is available when discovered, or
-// when its base element is discovered and the part sits in the variant slot.
-const baseByForm = new Map(variants.map((v) => [`${v.form}@${v.position}`, v.base]));
-const depth = new Map<string, number>(seeds.map((id) => [id, 0]));
-
-function availableDepth(
-  part: string,
-  layout: Layout,
-  index: number,
-  count: number,
-): number | undefined {
-  const own = depth.get(part);
-  const base = baseByForm.get(`${part}@${partPosition(layout, index, count)}`);
-  const viaBase = base === undefined ? undefined : depth.get(base);
-  if (own === undefined) return viaBase;
-  return viaBase === undefined ? own : Math.min(own, viaBase);
-}
-
-function recipeDepth(recipe: FlatRecipe): number | undefined {
-  let max = 0;
-  for (const [index, part] of recipe.parts.entries()) {
-    const d = availableDepth(part, recipe.layout, index, recipe.parts.length);
-    if (d === undefined) return undefined;
-    max = Math.max(max, d);
-  }
-  return max + 1;
-}
-
-for (let changed = true; changed; ) {
-  changed = false;
-  for (const recipe of flatRecipes) {
-    if (seedSet.has(recipe.result)) continue;
-    const d = recipeDepth(recipe);
-    if (d === undefined) continue;
-    const current = depth.get(recipe.result);
-    if (current === undefined || d < current) {
-      depth.set(recipe.result, d);
-      changed = true;
-    }
-  }
-}
-
-const kept = flatRecipes.filter(
-  (recipe) => !seedSet.has(recipe.result) && recipeDepth(recipe) !== undefined,
+// 3. Script of every element. Unihan lists simplified/traditional variant
+// pairs; a character is script-specific when it maps only to other characters
+// (马 -> 馬), and shared when it is its own variant (干, 着) or has none (女).
+const unihan = loadUnihanVariants();
+const scriptOverrides = new Map(
+  readTsv("curated/scripts.tsv").map(([id = "", script = ""]) => [id, script as Script | "both"]),
 );
 
-// 4. Elements, ordered seeds first, then by depth and code point.
-const used = new Set<string>();
-for (const recipe of kept) {
-  for (const [index, part] of recipe.parts.entries()) {
-    used.add(part);
-    const base = baseByForm.get(
-      `${part}@${partPosition(recipe.layout, index, recipe.parts.length)}`,
-    );
-    if (base !== undefined) used.add(base);
-  }
+function unihanScript(id: string): Script | "both" {
+  const variants = unihan.get(id);
+  if (variants?.simplified && !variants.simplified.includes(id)) return "traditional";
+  if (variants?.traditional && !variants.traditional.includes(id)) return "simplified";
+  return "both";
 }
 
+function scriptOf(id: string): Script | "both" {
+  return scriptOverrides.get(id) ?? unihanScript(id);
+}
+
+function loadUnihanVariants(): Map<string, { simplified?: string[]; traditional?: string[] }> {
+  const map = new Map<string, { simplified?: string[]; traditional?: string[] }>();
+  const char = (codepoint: string) => String.fromCodePoint(Number.parseInt(codepoint.slice(2), 16));
+  for (const [codepoint = "", field = "", value = ""] of readTsv("vendor/unihan/variants.txt")) {
+    const targets = value.split(" ").map((token) => char(token.split("<")[0] ?? ""));
+    const entry = map.get(char(codepoint)) ?? {};
+    if (field === "kSimplifiedVariant") entry.simplified = targets;
+    if (field === "kTraditionalVariant") entry.traditional = targets;
+    map.set(char(codepoint), entry);
+  }
+  return map;
+}
+
+// 4. Reachability from the strokes, once per script. Keep anything playable
+// in either; clients re-run the same search for the script the player picks.
+const byScript = {
+  simplified: reachable(seeds, flatRecipes, variants, (id) => scriptOf(id) !== "traditional"),
+  traditional: reachable(seeds, flatRecipes, variants, (id) => scriptOf(id) !== "simplified"),
+};
+const depth = new Map<string, number>();
+for (const mode of Object.values(byScript)) {
+  for (const [id, d] of mode.depth) depth.set(id, Math.min(d, depth.get(id) ?? d));
+}
+const kept = [...new Set([...byScript.simplified.recipes, ...byScript.traditional.recipes])];
+
+// 5. Elements, ordered seeds first, then by depth and code point.
 const variantForms = new Set(variants.map((variant) => variant.form));
 const curatedGloss = new Map(
   curated.flatMap((r) => (r.gloss ? [[r.result, r.gloss] as const] : [])),
@@ -278,8 +267,12 @@ const elements: Record<string, ElementInfo> = {};
 for (const id of order) {
   const stroke = strokes.find((s) => s.id === id);
   const entry = dictionary.get(id);
-  const pinyin = stroke ? [] : (entry?.pinyin ?? []);
-  const gloss = stroke?.gloss ?? curatedGloss.get(id) ?? cleanGloss(entry?.definition);
+  const pinyin = entry?.pinyin ?? [];
+  const definition = cleanGloss(entry?.definition);
+  // Strokes that are also characters keep their reading, so 一 is findable as "yi" / "one".
+  const gloss = stroke
+    ? [`${stroke.gloss} stroke`, definition].filter(Boolean).join(" · ")
+    : (curatedGloss.get(id) ?? definition);
   let kind: ElementKind = "character";
   if (stroke) kind = "stroke";
   else if (pinyin.length === 0 || variantForms.has(id) || isRadicalBlock(id)) kind = "component";
@@ -288,8 +281,7 @@ for (const id of order) {
     pinyin,
     gloss,
     ...(stroke ? { name: stroke.name } : {}),
-    depth: depth.get(id) ?? 0,
-    terminal: !used.has(id),
+    script: scriptOf(id),
   };
 }
 
@@ -323,6 +315,11 @@ const gameData: GameData = {
       url: "https://github.com/skishore/makemeahanzi",
       license: "LGPL-3.0-or-later",
     },
+    {
+      name: "Unihan database (kSimplifiedVariant, kTraditionalVariant)",
+      url: "https://www.unicode.org/charts/unihan.html",
+      license: "Unicode-3.0",
+    },
   ],
 };
 
@@ -352,12 +349,18 @@ function serialize(data: GameData): string {
   return `${lines.join("\n")}\n`;
 }
 
-// 5. Summary and optional diagnostics.
-const terminals = Object.values(elements).filter((info) => info.terminal).length;
-const maxDepth = Math.max(...Object.values(elements).map((info) => info.depth));
+// 6. Summary and optional diagnostics.
+for (const [script, mode] of Object.entries(byScript)) {
+  const used = new Set(mode.recipes.flatMap((recipe) => recipe.parts));
+  const terminals = [...mode.depth.keys()].filter((id) => !used.has(id)).length;
+  console.log(
+    `${script}: elements ${mode.depth.size}, recipes ${mode.recipes.length}, ` +
+      `end points ~${terminals}, max depth ${Math.max(...mode.depth.values())}`,
+  );
+}
 console.log(
-  `elements ${order.length} (of ${dictionary.size} in dictionary), recipes ${recipes.length}, ` +
-    `terminals ${terminals}, max depth ${maxDepth}; dropped: ${unparseable} unknown-part, ${nestedDropped} nested`,
+  `total: elements ${order.length} (of ${dictionary.size} in dictionary), recipes ${recipes.length}; ` +
+    `dropped: ${unparseable} unknown-part, ${nestedDropped} nested`,
 );
 
 const resultsByKey = new Map<string, Set<string>>();
@@ -369,19 +372,42 @@ const collisions = [...resultsByKey].filter(([, results]) => results.size > 1);
 console.log(`collisions ${collisions.length} (one arrangement, several characters)`);
 
 if (verbose) {
-  const blockers = new Map<string, number>();
+  // Script-specific parts that shared characters are built from. Common ones
+  // (幺 in 幼) belong in curated/scripts.tsv as "both".
+  const crossScript = new Map<string, string[]>();
   for (const recipe of flatRecipes) {
-    if (depth.has(recipe.result)) continue;
-    for (const [index, part] of recipe.parts.entries()) {
-      if (availableDepth(part, recipe.layout, index, recipe.parts.length) === undefined) {
-        blockers.set(part, (blockers.get(part) ?? 0) + 1);
-      }
+    if (scriptOf(recipe.result) !== "both" || !depth.has(recipe.result)) continue;
+    for (const part of recipe.parts) {
+      if (scriptOf(part) === "both") continue;
+      crossScript.set(part, [...(crossScript.get(part) ?? []), recipe.result]);
     }
   }
-  const top = [...blockers].sort((a, b) => b[1] - a[1]).slice(0, 80);
   console.log(
-    `\nunreachable parts blocking the most recipes:\n${top.map(([id, n]) => `${id}${n}`).join(" ")}`,
+    `\nscript-specific parts of shared characters:\n${[...crossScript]
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([part, users]) => `${part}(${scriptOf(part)}): ${users.join("")}`)
+      .join("\n")}`,
   );
+
+  const baseByForm = new Map(variants.map((v) => [`${v.form}@${v.position}`, v.base]));
+  for (const [script, mode] of Object.entries(byScript)) {
+    const other = script === "simplified" ? "traditional" : "simplified";
+    const blockers = new Map<string, number>();
+    for (const recipe of flatRecipes) {
+      if (mode.depth.has(recipe.result) || scriptOf(recipe.result) === other) continue;
+      for (const [index, part] of recipe.parts.entries()) {
+        const position = partPosition(recipe.layout, index, recipe.parts.length);
+        const base = baseByForm.get(`${part}@${position}`);
+        if (!mode.depth.has(part) && !(base && mode.depth.has(base))) {
+          blockers.set(part, (blockers.get(part) ?? 0) + 1);
+        }
+      }
+    }
+    const top = [...blockers].sort((a, b) => b[1] - a[1]).slice(0, 60);
+    console.log(
+      `\n${script}: unreachable parts blocking the most recipes:\n${top.map(([id, n]) => `${id}${n}`).join(" ")}`,
+    );
+  }
   console.log(
     `\ncollisions:\n${collisions.map(([key, results]) => `${key}=${[...results].join("/")}`).join(" ")}`,
   );

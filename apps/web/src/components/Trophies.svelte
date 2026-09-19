@@ -8,7 +8,7 @@ let dialog = $state<HTMLDialogElement>();
 const stats = $derived(score(game.book, game.progress));
 const list = $derived(game.achievements);
 const terminals = $derived(
-  game.progress.discoveries.filter((d) => game.book.element(d.id)?.terminal).map((d) => d.id),
+  game.progress.discoveries.filter((d) => game.book.isTerminal(d.id)).map((d) => d.id),
 );
 
 $effect(() => {

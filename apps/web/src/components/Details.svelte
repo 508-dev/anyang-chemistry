@@ -16,6 +16,15 @@ function hasParts(recipe: Recipe): boolean {
     return game.isDiscovered(part) || (base !== undefined && game.isDiscovered(base));
   });
 }
+const depth = $derived(game.book.depth(id) ?? 0);
+// Unnamed components (𠂉) are described by what they help build, found ones first.
+const partOf = $derived.by(() => {
+  const results = [...new Set(game.book.recipesUsing(id).map((recipe) => recipe.result))];
+  return [
+    ...results.filter(game.isDiscovered),
+    ...results.filter((r) => !game.isDiscovered(r)),
+  ].slice(0, 6);
+});
 const KIND_LABELS = {
   stroke: "笔画 stroke",
   component: "部件 component",
@@ -28,16 +37,18 @@ const KIND_LABELS = {
     <div class="glyph">{id}</div>
     <div class="facts">
       <p class="reading">
-        {info.pinyin.join(", ") || info.name || ""}
+        {[info.name, info.pinyin.join(", ")].filter(Boolean).join(" · ")}
         <span class="kind">{KIND_LABELS[info.kind]}</span>
       </p>
-      <p class="gloss">{info.gloss || "—"}</p>
+      <p class="gloss">
+        {#if info.gloss}{info.gloss}{:else if partOf.length > 0}part of <span class="zh">{partOf.join(" ")}</span>{:else}—{/if}
+      </p>
       <p class="meta">
-        层 depth {info.depth}
-        {#if info.terminal}· <span class="gold">终 end point</span>{/if}
+        层 depth {depth}
+        {#if game.book.isTerminal(id)}· <span class="gold">终 end point</span>{/if}
         {#if hint.total > 0}· 用法 uses {hint.found}/{hint.total}{/if}
       </p>
-      {#if info.depth > 0 && known.length > 0}
+      {#if depth > 0 && known.length > 0}
         <p class="recipes">
           {#each known as recipe (formatIds({ layout: recipe.layout, parts: recipe.parts }))}
             <span class="recipe" title="{recipe.parts.join(' + ')} · {LAYOUT_NAMES[recipe.layout]}">
@@ -82,6 +93,9 @@ const KIND_LABELS = {
   }
   .gloss {
     font-size: 0.9rem;
+  }
+  .zh {
+    font-family: var(--glyph-font);
   }
   .gold {
     color: var(--gold-ink);

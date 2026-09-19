@@ -17,7 +17,7 @@ const exhausted = $derived(hint.total > 0 && hint.found === hint.total);
   class:selected={game.selected === id}
   class:unseen={game.unseen.has(id)}
   class:exhausted
-  class:terminal={info?.terminal}
+  class:terminal={game.book.isTerminal(id)}
   class:stroke={info?.kind === "stroke"}
   title={info?.gloss}
   use:draggable={{

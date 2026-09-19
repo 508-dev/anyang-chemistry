@@ -1,9 +1,26 @@
 import { type Layout, type Position, partPosition, recipeKey } from "./ids";
-import type { ElementInfo, GameData, Recipe } from "./types";
+import { reachable } from "./reachability";
+import type { Collection, ElementInfo, GameData, Recipe, Script } from "./types";
 
-/** Indexed, read-only view of GameData. Build once per data load. */
+export interface BookOptions {
+  /** Play one script only; the other script's forms are removed entirely. */
+  script?: Script;
+}
+
+/**
+ * The playable game for one script: GameData filtered to elements of that
+ * script, then pruned to what is reachable from the seeds without them.
+ * Build once per data load and script.
+ */
 export class RecipeBook {
   readonly data: GameData;
+  readonly script: Script | undefined;
+  readonly seeds: readonly string[];
+  /** Every playable element: seeds first, then by depth and code point. */
+  readonly ids: readonly string[];
+  readonly collections: readonly Collection[];
+  private readonly depths: Map<string, number>;
+  private readonly usedAsPart = new Set<string>();
   private readonly byKey = new Map<string, string[]>();
   private readonly byResult = new Map<string, Recipe[]>();
   private readonly byPart = new Map<string, Recipe[]>();
@@ -14,14 +31,46 @@ export class RecipeBook {
   /** Two-part prefixes/suffixes of three-part recipes, e.g. "⿲木木_". */
   private readonly partialTriples = new Set<string>();
 
-  constructor(data: GameData) {
+  constructor(data: GameData, options: BookOptions = {}) {
     this.data = data;
+    this.script = options.script;
+    // Ids without an element entry are variant slots (灬) filled by their base.
+    const allowed = (id: string) => {
+      const script = data.elements[id]?.script ?? "both";
+      return script === "both" || !options.script || script === options.script;
+    };
+    const { depth, recipes } = reachable(
+      data.seeds,
+      data.recipes.map(([result, layout, ...parts]) => ({ result, layout, parts })),
+      data.variants,
+      allowed,
+    );
+    this.depths = depth;
+    this.seeds = data.seeds.filter((id) => depth.has(id));
+    this.ids = [
+      ...this.seeds,
+      ...[...depth.keys()]
+        .filter((id) => depth.get(id) !== 0)
+        .sort(
+          (a, b) =>
+            (depth.get(a) ?? 0) - (depth.get(b) ?? 0) ||
+            (a.codePointAt(0) ?? 0) - (b.codePointAt(0) ?? 0),
+        ),
+    ];
+    this.collections = data.collections
+      .map((collection) => ({
+        ...collection,
+        members: collection.members.filter((id) => depth.has(id)),
+      }))
+      .filter((collection) => collection.members.length > 1);
+
     for (const variant of data.variants) {
+      if (!depth.has(variant.base) || !allowed(variant.form)) continue;
       this.formByBase.set(`${variant.base}@${variant.position}`, variant.form);
       this.baseByForm.set(`${variant.form}@${variant.position}`, variant.base);
     }
-    for (const [result, layout, ...parts] of data.recipes) {
-      const recipe: Recipe = { result, layout, parts };
+    for (const recipe of recipes) {
+      const { result, layout, parts } = recipe;
       push(this.byKey, recipeKey(layout, parts), result);
       push(this.byResult, result, recipe);
       const users = new Set<string>();
@@ -30,7 +79,10 @@ export class RecipeBook {
         const base = this.baseAt(part, partPosition(layout, index, parts.length));
         if (base) users.add(base);
       });
-      for (const user of users) push(this.byPart, user, recipe);
+      for (const user of users) {
+        this.usedAsPart.add(user);
+        push(this.byPart, user, recipe);
+      }
       if (parts.length === 3) {
         const [a = "", b = "", c = ""] = parts;
         this.partialTriples.add(recipeKey(layout, [a, b, "_"]));
@@ -40,11 +92,22 @@ export class RecipeBook {
   }
 
   get size(): number {
-    return Object.keys(this.data.elements).length;
+    return this.ids.length;
   }
 
+  /** Info for a playable element; undefined for anything outside this book. */
   element(id: string): ElementInfo | undefined {
-    return this.data.elements[id];
+    return this.depths.has(id) ? this.data.elements[id] : undefined;
+  }
+
+  /** Fewest combinations needed to reach `id` from the seeds. */
+  depth(id: string): number | undefined {
+    return this.depths.get(id);
+  }
+
+  /** An end point: no recipe in this book builds on it. */
+  isTerminal(id: string): boolean {
+    return this.depths.has(id) && !this.usedAsPart.has(id);
   }
 
   /**

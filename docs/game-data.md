@@ -9,6 +9,8 @@
 | `data/curated/components.tsv` | Hand-written recipes. A character listed here ignores its dictionary decomposition. Used to build basic atoms (人, 女, 心) from strokes and to fix collisions. |
 | `data/curated/variants.tsv` | Positional forms: `氵 水 left` means 水 on the left matches recipes that use 氵. |
 | `data/curated/collections.tsv` | Trophy sets. |
+| `data/vendor/unihan/variants.txt` | Unihan `kSimplifiedVariant`/`kTraditionalVariant` rows (Unicode License v3), used to label each element's script. |
+| `data/curated/scripts.tsv` | Script overrides. Mostly shapes that shared characters are built from (幺 in 幼, 囱 in 窗), marked `both`. |
 
 Run `bun run data:build --report` (from `data/`, or `bun run --cwd data build --report`)
 to list which unreachable parts block the most recipes, and which arrangements
@@ -20,21 +22,34 @@ produce more than one character. Use those lists to decide what to curate next.
 2. Flatten nested IDS. `⿰a⿰bc` becomes `⿲abc`. A nested sub-tree that spells
    exactly one known character is replaced by that character, so `⿱木⿰木木`
    becomes `⿱木林`. Anything still nested is dropped.
-3. Compute reachability from the strokes, counting variant slots. Each
-   element's depth is the fewest combinations needed to reach it.
-4. Keep only reachable elements and recipes. Mark elements no recipe uses as
-   `terminal`.
+3. Label each element's script. A character is `simplified` or `traditional`
+   when Unihan maps it only to other characters (马 → 馬), and `both` when it
+   is its own variant (干, 着) or has none (女). `curated/scripts.tsv` wins
+   over Unihan.
+4. Compute reachability from the strokes separately for each script, counting
+   variant slots. Keep every element and recipe that's playable in at least
+   one script. Characters that are only reachable by mixing scripts are
+   dropped.
 
-## Format (schemaVersion 1)
+`--report` also lists script-specific parts that shared characters are built
+from. If a common character appears there, add its part to `scripts.tsv` as
+`both`. Otherwise that character is missing from the other script.
+
+Depth and end points aren't stored, because they depend on the script.
+`RecipeBook` computes them at load time by running the same `reachable()`
+search from `packages/core` that the build uses.
+
+## Format (schemaVersion 2)
 
 ```jsonc
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "seeds": ["一", "丨", ...],               // palette order
   "elements": {
     "奶": { "kind": "character",           // "stroke" | "component" | "character"
             "pinyin": ["nǎi"], "gloss": "milk; breasts",
-            "depth": 4, "terminal": true }  // strokes also carry "name": "横"
+            "script": "both" }              // "simplified" | "traditional" | "both"
+                                            // strokes also carry "name": "横"
   },
   "recipes": [["奶", "⿰", "女", "乃"], ...], // [result, layout, ...parts]
   "variants": [{ "form": "氵", "base": "水", "position": "left" }],

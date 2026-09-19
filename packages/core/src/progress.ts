@@ -27,7 +27,7 @@ export class Progress {
   }
 
   static start(book: RecipeBook, at = Date.now()): Progress {
-    return new Progress(book.data.seeds.map((id) => ({ id, at })));
+    return new Progress(book.seeds.map((id) => ({ id, at })));
   }
 
   /** Restore a save, dropping ids the current data no longer has and re-adding any missing seeds. */
@@ -113,7 +113,7 @@ export function achievements(book: RecipeBook, progress: Progress): Achievement[
     });
   }
 
-  for (const collection of book.data.collections) {
+  for (const collection of book.collections) {
     const found = collection.members.filter((id) => progress.has(id)).length;
     list.push({
       id: `collection-${collection.id}`,
@@ -139,11 +139,12 @@ export function score(book: RecipeBook, progress: Progress): Score {
   let terminalsTotal = 0;
   let terminalsFound = 0;
   let deepest = 0;
-  for (const [id, info] of Object.entries(book.data.elements)) {
-    if (info.terminal) terminalsTotal++;
+  for (const id of book.ids) {
+    const terminal = book.isTerminal(id);
+    if (terminal) terminalsTotal++;
     if (!progress.has(id)) continue;
-    if (info.terminal) terminalsFound++;
-    deepest = Math.max(deepest, info.depth);
+    if (terminal) terminalsFound++;
+    deepest = Math.max(deepest, book.depth(id) ?? 0);
   }
   return {
     discovered: progress.count,

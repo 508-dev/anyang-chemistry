@@ -29,7 +29,7 @@ function autoDismiss(_node: HTMLElement, notice: Notice) {
           <strong>新发现 · New!</strong>
           {info?.pinyin.join(", ")}
           <small>{info?.gloss}</small>
-          {#if info?.terminal}<em>终点 · end point</em>{/if}
+          {#if game.book.isTerminal(notice.id)}<em>终点 · end point</em>{/if}
         </span>
       {:else}
         <span class="glyph">🏆</span>

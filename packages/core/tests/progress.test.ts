@@ -47,8 +47,8 @@ describe("derived scoring", () => {
     expect(trees).toMatchObject({ unlocked: false, progress: { found: 2, total: 3 } });
     expect(score(book, progress)).toMatchObject({
       discovered: 8,
-      total: 14,
-      terminals: { found: 1, total: 5 },
+      total: 16,
+      terminals: { found: 0, total: 6 },
       deepest: 3,
     });
   });
