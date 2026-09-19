@@ -1,3 +1,24 @@
+# Anyang Chemistry · 安阳字炼
+
+A combination game for Chinese characters. Start with the strokes, drag them
+together into components and characters, and discover how 6,000+ characters
+are built. Where you drop a piece matters: 女 left of 乃 makes 奶.
+
+```bash
+bun install
+bun run dev          # Vite dev server on this worktree's WEB_PORT
+bun run check        # lint, typecheck, test, build
+bun run data:build   # regenerate data/game-data.json from data/curated/*
+```
+
+- [docs/architecture.md](docs/architecture.md): design, layers, mobile plan
+- [docs/game-data.md](docs/game-data.md): data pipeline and JSON contract
+
+The rest of this README is the 508 Devkit template this repo was generated
+from. It's kept until the template selection pass (see `MANIFEST.md`).
+
+---
+
 # 508 Devkit
 
 Last reviewed: 2026-07-05

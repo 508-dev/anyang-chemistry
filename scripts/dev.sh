@@ -45,20 +45,11 @@ done
 eval "$(./scripts/worktree-ports.sh export)"
 export WEB_HOST="${WEB_HOST:-127.0.0.1}"
 
-# Root dev runs only language-neutral infra plus the TypeScript convention
-# watcher. Runtime-specific services, such as the Python API, live in stacks and
-# should be started from their stack scripts when selected for a target repo.
-echo "508 Devkit local stack"
-echo "Assigned worktree ports:"
-./scripts/worktree-ports.sh env | sed 's/^/  /'
+# The game is a static client with no backend, so dev runs only the Vite server
+# for apps/web on this worktree's WEB_PORT.
+echo "Anyang Chemistry"
+echo "  Web: ${WEB_URL}"
 echo
-echo "Starting services"
-echo "  Web: ${WEB_URL} (framework-neutral TypeScript watcher)"
-echo "  Postgres: 127.0.0.1:${POSTGRES_HOST_PORT}"
-echo "  Redis: 127.0.0.1:${REDIS_HOST_PORT}"
-echo
-
-./scripts/docker-compose.sh up -d postgres redis
 
 detect_js_runner() {
   if [ -n "${DEVKIT_JS_RUNNER:-}" ]; then
@@ -228,7 +219,7 @@ reclaim_service_port() {
 
 if [ "$RECLAIM_PORTS" = "1" ]; then
   if ! reclaim_service_port web "$WEB_PORT"; then
-    echo "Continuing because the root dev script does not bind WEB_PORT." >&2
+    echo "Could not reclaim WEB_PORT; Vite will fail if it is still in use." >&2
   fi
 fi
 
@@ -239,10 +230,10 @@ trap cleanup INT TERM EXIT
 
 case "$JS_RUNNER" in
   bun)
-    bun run --cwd stacks/typescript dev &
+    bun run --cwd apps/web dev &
     ;;
   pnpm)
-    pnpm -C stacks/typescript run dev &
+    pnpm -C apps/web run dev &
     ;;
   *)
     echo "Unsupported DEVKIT_JS_RUNNER=${JS_RUNNER}; expected bun or pnpm." >&2

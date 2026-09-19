@@ -1,0 +1,22 @@
+{
+  "name": "@anyang/data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./game-data.json": "./game-data.json"
+  },
+  "scripts": {
+    "build": "bun scripts/build.ts",
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anyang/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.4",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
+  }
+}

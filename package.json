@@ -1,25 +1,25 @@
 {
-  "name": "508-devkit",
+  "name": "anyang-chemistry",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "packageManager": "bun@1.3.13",
   "workspaces": [
-    "stacks/typescript"
+    "packages/*",
+    "data",
+    "apps/*"
   ],
   "scripts": {
     "dev": "./scripts/dev.sh",
-    "build": "bun run --cwd stacks/typescript build",
+    "build": "bun run --cwd apps/web build",
+    "data:build": "bun run --cwd data build",
     "lint": "biome check .",
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "typecheck": "bun run --cwd stacks/typescript typecheck",
-    "test": "bun run --cwd stacks/typescript test",
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "bun run --filter '*' test",
     "check": "./scripts/check-all.sh",
-    "ports": "./scripts/worktree-ports.sh env",
-    "db:generate": "bun run --cwd stacks/typescript db:generate",
-    "db:push": "bun run --cwd stacks/typescript db:push",
-    "db:studio": "bun run --cwd stacks/typescript db:studio"
+    "ports": "./scripts/worktree-ports.sh env"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.13",

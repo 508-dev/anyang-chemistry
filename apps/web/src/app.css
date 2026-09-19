@@ -1,0 +1,74 @@
+:root {
+  --paper: #f5efe3;
+  --card: #fffaf0;
+  --stroke-card: #efe6d4;
+  --ink: #2b2118;
+  --muted: #8a7a66;
+  --line: #d9ccb4;
+  --grid: rgb(190 60 40 / 0.12);
+  --zone: rgb(190 60 40 / 0.05);
+  --zone-hover: rgb(190 60 40 / 0.14);
+  --accent: #b8412c;
+  --accent-soft: #d99a88;
+  --gold: #d4a52c;
+  --gold-ink: #9a7412;
+  --glyph-font:
+    "LXGW WenKai", "Kaiti SC", "STKaiti", "KaiTi", "AR PL UKai CN", "Noto Serif CJK SC",
+    "Noto Sans CJK SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", serif;
+  color-scheme: light;
+  font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans CJK SC", "PingFang SC", sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1d1914;
+    --card: #28221b;
+    --stroke-card: #2f281f;
+    --ink: #f1e8d8;
+    --muted: #a39480;
+    --line: #4a3f31;
+    --grid: rgb(230 120 90 / 0.14);
+    --zone: rgb(230 120 90 / 0.07);
+    --zone-hover: rgb(230 120 90 / 0.2);
+    --accent: #e0785f;
+    --accent-soft: #9a5646;
+    --gold-ink: #e2bd55;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button,
+select {
+  cursor: pointer;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--card);
+}
+
+input {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--card);
+}

@@ -42,7 +42,10 @@ jobs:
           token: ""
           filters: |
             typescript:
-              - "stacks/typescript/**"
+              - "apps/**"
+              - "packages/**"
+              - "data/**"
+              - "tsconfig.base.json"
               - "package.json"
               - "bun.lock"
               - "bunfig.toml"
@@ -85,6 +88,9 @@ jobs:
 
       - name: Tests
         run: bun run test
+
+      - name: Game data is up to date
+        run: bun run data:build && git diff --exit-code data/game-data.json
 
       - name: Build
         run: bun run build

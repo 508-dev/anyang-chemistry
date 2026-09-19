@@ -1,0 +1,36 @@
+# Positional forms. Columns: form, base, position.
+# Placing the base in that position also matches recipes written with the form,
+# and the board draws the form: 水 dropped on the left draws as 氵.
+# Positions: left, right, top, bottom, middle, outer, inner.
+氵	水	left
+亻	人	left
+忄	心	left
+扌	手	left
+讠	言	left
+訁	言	left
+钅	金	left
+釒	金	left
+纟	糸	left
+糹	糸	left
+饣	食	left
+飠	食	left
+礻	示	left
+衤	衣	left
+犭	犬	left
+⺼	肉	left
+𧾷	足	left
+⻊	足	left
+牜	牛	left
+王	玉	left
+阝	阜	left
+阝	邑	right
+刂	刀	right
+灬	火	bottom
+⺗	心	bottom
+⺮	竹	top
+艹	艸	top
+⺌	小	top
+爫	爪	top
+罒	网	top
+耂	老	top
+覀	西	top
