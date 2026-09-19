@@ -26,10 +26,10 @@ function autoDismiss(_node: HTMLElement, notice: Notice) {
         {@const info = game.book.element(notice.id)}
         <span class="glyph">{notice.id}</span>
         <span>
-          <strong>新发现 · New!</strong>
+          <strong>新發現 · New!</strong>
           {info?.pinyin.join(", ")}
           <small>{info?.gloss}</small>
-          {#if game.book.isTerminal(notice.id)}<em>终点 · end point</em>{/if}
+          {#if game.book.isTerminal(notice.id)}<em>終點 · end point</em>{/if}
         </span>
       {:else}
         <span class="glyph">🏆</span>

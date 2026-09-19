@@ -41,8 +41,9 @@ export function localSaveStore(script: Script): SaveStore {
 
 const SCRIPT_KEY = `${PREFIX}:script`;
 
+/** Traditional by default: most players are in Taiwan. */
 export function loadScript(): Script {
-  return localStorage.getItem(SCRIPT_KEY) === "traditional" ? "traditional" : "simplified";
+  return localStorage.getItem(SCRIPT_KEY) === "simplified" ? "simplified" : "traditional";
 }
 
 export function saveScript(script: Script): void {

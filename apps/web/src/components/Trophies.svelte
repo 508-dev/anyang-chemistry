@@ -16,7 +16,7 @@ $effect(() => {
 });
 
 async function reset() {
-  if (confirm("Reset all progress? 确定重来？")) {
+  if (confirm("Reset all progress? 確定重來？")) {
     await game.reset();
     onclose();
   }
@@ -26,12 +26,12 @@ async function reset() {
 <dialog bind:this={dialog} {onclose} aria-label="Trophies">
   <header>
     <h2>成就 · Trophies</h2>
-    <button type="button" onclick={() => dialog?.close()}>关闭 Close</button>
+    <button type="button" onclick={() => dialog?.close()}>關閉 Close</button>
   </header>
 
   <dl class="stats">
-    <div><dt>已发现 Found</dt><dd>{stats.discovered} / {stats.total}</dd></div>
-    <div><dt>终点 End points</dt><dd>{stats.terminals.found} / {stats.terminals.total}</dd></div>
+    <div><dt>已發現 Found</dt><dd>{stats.discovered} / {stats.total}</dd></div>
+    <div><dt>終點 End points</dt><dd>{stats.terminals.found} / {stats.terminals.total}</dd></div>
     <div><dt>最深 Deepest</dt><dd>{stats.deepest}</dd></div>
   </dl>
 
@@ -48,12 +48,12 @@ async function reset() {
   </ul>
 
   {#if terminals.length > 0}
-    <h3>终点 · End points found</h3>
+    <h3>終點 · End points found</h3>
     <p class="terminals">{terminals.join(" ")}</p>
   {/if}
 
   <footer>
-    <button type="button" class="danger" onclick={reset}>重来 Reset progress</button>
+    <button type="button" class="danger" onclick={reset}>重來 Reset progress</button>
   </footer>
 </dialog>
 

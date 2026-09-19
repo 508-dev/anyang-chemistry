@@ -49,7 +49,7 @@ search from `packages/core` that the build uses.
     "奶": { "kind": "character",           // "stroke" | "component" | "character"
             "pinyin": ["nǎi"], "gloss": "milk; breasts",
             "script": "both" }              // "simplified" | "traditional" | "both"
-                                            // strokes also carry "name": "横"
+                                            // strokes also carry "name": "橫"
   },
   "recipes": [["奶", "⿰", "女", "乃"], ...], // [result, layout, ...parts]
   "variants": [{ "form": "氵", "base": "水", "position": "left" }],

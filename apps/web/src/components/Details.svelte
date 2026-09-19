@@ -26,7 +26,7 @@ const partOf = $derived.by(() => {
   ].slice(0, 6);
 });
 const KIND_LABELS = {
-  stroke: "笔画 stroke",
+  stroke: "筆畫 stroke",
   component: "部件 component",
   character: "字 character",
 };
@@ -44,8 +44,8 @@ const KIND_LABELS = {
         {#if info.gloss}{info.gloss}{:else if partOf.length > 0}part of <span class="zh">{partOf.join(" ")}</span>{:else}—{/if}
       </p>
       <p class="meta">
-        层 depth {depth}
-        {#if game.book.isTerminal(id)}· <span class="gold">终 end point</span>{/if}
+        層 depth {depth}
+        {#if game.book.isTerminal(id)}· <span class="gold">終 end point</span>{/if}
         {#if hint.total > 0}· 用法 uses {hint.found}/{hint.total}{/if}
       </p>
       {#if depth > 0 && known.length > 0}

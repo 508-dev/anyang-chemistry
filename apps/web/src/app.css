@@ -12,11 +12,15 @@
   --accent-soft: #d99a88;
   --gold: #d4a52c;
   --gold-ink: #9a7412;
+  /* Taiwan (TC) fonts first: glyph shapes differ by region even for shared characters. */
   --glyph-font:
-    "LXGW WenKai", "Kaiti SC", "STKaiti", "KaiTi", "AR PL UKai CN", "Noto Serif CJK SC",
-    "Noto Sans CJK SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", serif;
+    "TW-Kai", "BiauKai", "DFKai-SB", "Kaiti TC", "LXGW WenKai TC", "AR PL UKai TW",
+    "Noto Serif CJK TC", "Noto Sans CJK TC", "Source Han Sans TC", "PingFang TC",
+    "Microsoft JhengHei", serif;
   color-scheme: light;
-  font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans CJK SC", "PingFang SC", sans-serif;
+  font-family:
+    system-ui, -apple-system, "Segoe UI", "Noto Sans CJK TC", "PingFang TC", "Microsoft JhengHei",
+    sans-serif;
   color: var(--ink);
   background: var(--paper);
 }

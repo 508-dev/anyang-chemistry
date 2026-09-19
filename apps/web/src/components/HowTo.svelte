@@ -20,7 +20,7 @@ const POSITION_LABELS: Record<Position, string> = {
 };
 
 function slot(layout: Layout, index: number, count: number): string {
-  return layout === "⿻" ? "叠" : POSITION_LABELS[partPosition(layout, index, count)];
+  return layout === "⿻" ? "疊" : POSITION_LABELS[partPosition(layout, index, count)];
 }
 </script>
 
@@ -50,17 +50,17 @@ function slot(layout: Layout, index: number, count: number): string {
 
 <section class="howto" aria-label="How to make {char}">
   {#if tree?.recipe}
-    <h3>怎么写 <span class="zh">{char}</span> · How to build it</h3>
+    <h3>怎麼寫 <span class="zh">{char}</span> · How to build it</h3>
     <ul class="root">{@render step(tree)}</ul>
     <p class="legend">
-      左右上下 = drop beside · 合 叠 外 = drop on the center · <span class="known-chip">有</span> you have it
+      左右上下 = drop beside · 合 疊 外 = drop on the center · <span class="known-chip">有</span> you have it
     </p>
   {:else if tree}
     <p><span class="zh">{char}</span> is a starting stroke: {game.book.element(char)?.name}.</p>
   {:else if elsewhere && elsewhere !== "both"}
     <p>
       <span class="zh">{char}</span> is
-      {elsewhere === "traditional" ? "繁体 traditional" : "简体 simplified"} — switch scripts to build it.
+      {elsewhere === "traditional" ? "繁體 traditional" : "簡體 simplified"} — switch scripts to build it.
     </p>
   {:else}
     <p><span class="zh">{char}</span> isn't buildable in the game yet.</p>

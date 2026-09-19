@@ -16,7 +16,7 @@ export const fixture: GameData = {
   schemaVersion: 2,
   seeds: ["一", "丨", "丿", "㇏"],
   elements: {
-    一: { ...el("stroke", "yī", "horizontal; one"), name: "横" },
+    一: { ...el("stroke", "yī", "horizontal; one"), name: "橫" },
     丨: { ...el("stroke", "", "vertical"), name: "竖" },
     丿: { ...el("stroke", "", "left-falling"), name: "撇" },
     "㇏": { ...el("stroke", "", "right-falling"), name: "捺" },

@@ -62,7 +62,7 @@ function tapZone(zone: Zone) {
         </div>
       {/key}
     {:else}
-      <span class="empty">拖到这里<br /><small>Drag or tap a piece to start</small></span>
+      <span class="empty">拖到這裡<br /><small>Drag or tap a piece to start</small></span>
     {/if}
     </div>
     {/key}

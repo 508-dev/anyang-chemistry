@@ -84,8 +84,8 @@ export class Game {
         kind: "rejected",
         text:
           outcome.reason === "unsupported-zone"
-            ? "这里放不下 · Extend a row sideways, a column up or down"
-            : "没有反应 · Nothing forms there",
+            ? "這裡放不下 · Extend a row sideways, a column up or down"
+            : "沒有反應 · Nothing forms there",
       };
       return;
     }

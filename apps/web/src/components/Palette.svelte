@@ -11,7 +11,7 @@ type Sort = "found" | "depth";
 
 const FILTERS: { value: Filter; label: string }[] = [
   { value: "all", label: "全部 All" },
-  { value: "stroke", label: "笔画 Strokes" },
+  { value: "stroke", label: "筆畫 Strokes" },
   { value: "component", label: "部件 Parts" },
   { value: "character", label: "字 Characters" },
 ];
@@ -63,10 +63,10 @@ const ids = $derived.by(() => {
 
 <section class="palette" aria-label="Discovered elements">
   <div class="controls">
-    <input type="search" placeholder="搜索 字 / pinyin / meaning" bind:value={query} />
+    <input type="search" placeholder="搜尋 字 / pinyin / meaning" bind:value={query} />
     <select bind:value={sort} aria-label="Sort">
-      <option value="found">新的 Newest</option>
-      <option value="depth">层次 Depth</option>
+      <option value="found">最新 Newest</option>
+      <option value="depth">層次 Depth</option>
     </select>
   </div>
   <div class="filters" role="radiogroup" aria-label="Filter">
@@ -89,7 +89,7 @@ const ids = $derived.by(() => {
     {#each ids as id (id)}
       <Tile {game} {id} />
     {:else}
-      <p class="none">没有 · Nothing matches</p>
+      <p class="none">沒有 · Nothing matches</p>
     {/each}
   </div>
 </section>

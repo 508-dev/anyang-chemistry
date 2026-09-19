@@ -16,8 +16,8 @@ const loading = $derived(loadGame(script));
 let showTrophies = $state(false);
 
 const SCRIPTS: { value: Script; label: string; title: string }[] = [
-  { value: "simplified", label: "简", title: "简体 Simplified" },
   { value: "traditional", label: "繁", title: "繁體 Traditional" },
+  { value: "simplified", label: "簡", title: "簡體 Simplified" },
 ];
 
 function chooseScript(next: Script) {
@@ -27,12 +27,12 @@ function chooseScript(next: Script) {
 </script>
 
 {#await loading}
-  <p class="status">载入中 · Loading…</p>
+  <p class="status">載入中 · Loading…</p>
 {:then game}
   {@const stats = score(game.book, game.progress)}
   <div class="app">
     <header class="top">
-      <h1>{script === "traditional" ? "安陽字煉" : "安阳字炼"} <small>Anyang Chemistry</small></h1>
+      <h1>安陽字煉 <small>Anyang Chemistry</small></h1>
       <div class="script" role="radiogroup" aria-label="Script">
         {#each SCRIPTS as option (option.value)}
           <button
@@ -49,7 +49,7 @@ function chooseScript(next: Script) {
       </div>
       <button type="button" class="stats" onclick={() => (showTrophies = true)}>
         <span><strong>{stats.discovered}</strong>/{stats.total}</span>
-        <span class="terminals">终 {stats.terminals.found}</span>
+        <span class="terminals">終 {stats.terminals.found}</span>
         <span aria-hidden="true">🏆</span>
       </button>
     </header>
@@ -76,7 +76,7 @@ function chooseScript(next: Script) {
     <div class="drag-ghost" style:left="{drag.x}px" style:top="{drag.y}px">{drag.id}</div>
   {/if}
 {:catch error}
-  <p class="status">出错了 · {error.message}</p>
+  <p class="status">出錯了 · {error.message}</p>
 {/await}
 
 <style>

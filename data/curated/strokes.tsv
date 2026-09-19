@@ -1,23 +1,23 @@
 # Starting elements: the strokes. Columns: glyph, Chinese name, English gloss.
 # Order here is palette order. Unified ideographs (一丨丿丶亅乛乚乙) are used
 # where they exist because the dictionary decompositions use them.
-一	横	horizontal
-丨	竖	vertical
+一	橫	horizontal
+丨	豎	vertical
 丿	撇	left-falling
-丶	点	dot
+丶	點	dot
 ㇏	捺	right-falling
 ㇀	提	rising
-亅	竖钩	vertical hook
-乛	横钩	horizontal hook
-㇕	横折	horizontal turn
-㇆	横折钩	horizontal turn hook
-㇇	横撇	horizontal left-fall
-㇗	竖折	vertical turn
-乚	竖弯钩	vertical bend hook
-乙	横折弯钩	horizontal turn bend hook
-㇉	竖折折钩	vertical double-turn hook
+亅	豎鉤	vertical hook
+乛	橫鉤	horizontal hook
+㇕	橫折	horizontal turn
+㇆	橫折鉤	horizontal turn hook
+㇇	橫撇	horizontal left-fall
+㇗	豎折	vertical turn
+乚	豎彎鉤	vertical bend hook
+乙	橫折彎鉤	horizontal turn bend hook
+㇉	豎折折鉤	vertical double-turn hook
 ㇜	撇折	left-fall turn
-㇛	撇点	left-fall dot
-㇂	斜钩	slanted hook
-㇃	卧钩	lying hook
-㇁	弯钩	curved hook
+㇛	撇點	left-fall dot
+㇂	斜鉤	slanted hook
+㇃	臥鉤	lying hook
+㇁	彎鉤	curved hook

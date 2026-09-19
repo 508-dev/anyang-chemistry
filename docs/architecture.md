@@ -1,7 +1,7 @@
 # Architecture
 
 Anyang Chemistry is a combination game for Chinese characters, in the style of
-the Android "alchemy" games. You start with the strokes (横 竖 撇 点 …) and
+the Android "alchemy" games. You start with the strokes (橫 豎 撇 點 …) and
 combine them into components, then characters. Where you place a piece
 matters: 女 to the left of 乃 makes 奶.
 
@@ -60,7 +60,10 @@ Simplified and traditional are separate games. `new RecipeBook(data, { script })
 removes the other script's elements, then re-runs reachability from the
 strokes. Anything that could only be built through the other script is gone
 too, along with its depth, end points and collection members. Each script has
-its own save. Shapes that shared characters need (幺 in 幼) are marked `both`
+its own save. The audience is mostly in Taiwan, so traditional is the
+default and all interface text, stroke names and collection titles are in
+traditional Chinese; simplified remains available as a game mode. The
+choice is remembered per device. Shapes that shared characters need (幺 in 幼) are marked `both`
 in `data/curated/scripts.tsv`.
 
 ## Hints
@@ -68,7 +71,7 @@ in `data/curated/scripts.tsv`.
 Typing a single character into the search box shows `howToMake()`: a
 construction tree that follows the shallowest recipe at each step. It stops at
 pieces the player already has and labels each part with its zone
-(左右上下, or 合/叠/外 for center drops). Components with no gloss (𠂉) are
+(左右上下, or 合/疊/外 for center drops). Components with no gloss (𠂉) are
 described by the characters they help build. Strokes that are also characters
 keep their reading, so 一 is found by "yi" or "one".
 

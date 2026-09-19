@@ -64,7 +64,7 @@ describe("generated game data", () => {
   });
 
   it("makes strokes findable by their character reading", () => {
-    expect(data.elements.一).toMatchObject({ kind: "stroke", name: "横", pinyin: ["yī"] });
+    expect(data.elements.一).toMatchObject({ kind: "stroke", name: "橫", pinyin: ["yī"] });
     expect(data.elements.一?.gloss).toContain("one");
   });
 
