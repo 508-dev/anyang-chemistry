@@ -19,6 +19,12 @@ export const ZONES: readonly Zone[] = ["left", "right", "top", "bottom", "center
 export interface Board {
   layout: Layout | null;
   parts: string[];
+  /**
+   * The row or column that just produced the single element on the board.
+   * A third in-line piece may still complete a three-part character, so
+   * 丿 + 丨 (= 亻) + 丨 still makes 川 = ⿲丿丨丨.
+   */
+  from?: Arrangement;
 }
 
 export const EMPTY_BOARD: Board = { layout: null, parts: [] };
@@ -40,15 +46,16 @@ export function arrangementsFor(board: Board, piece: string, zone: Zone): Arrang
   if (first === undefined) return [];
 
   if (second === undefined) {
+    const extended = board.from ? extend(board.from, piece, zone) : undefined;
     switch (zone) {
       case "left":
-        return [{ layout: "⿰", parts: [piece, first] }];
+        return withExtension({ layout: "⿰", parts: [piece, first] }, extended);
       case "right":
-        return [{ layout: "⿰", parts: [first, piece] }];
+        return withExtension({ layout: "⿰", parts: [first, piece] }, extended);
       case "top":
-        return [{ layout: "⿱", parts: [piece, first] }];
+        return withExtension({ layout: "⿱", parts: [piece, first] }, extended);
       case "bottom":
-        return [{ layout: "⿱", parts: [first, piece] }];
+        return withExtension({ layout: "⿱", parts: [first, piece] }, extended);
       case "center":
         return ENCLOSING_LAYOUTS.flatMap((layout) => [
           { layout, parts: [first, piece] },
@@ -58,17 +65,32 @@ export function arrangementsFor(board: Board, piece: string, zone: Zone): Arrang
   }
 
   // A pending pair only grows along its own axis, into ⿲ or ⿳.
-  if (board.layout === "⿰" && (zone === "left" || zone === "right")) {
-    return [
-      { layout: "⿲", parts: zone === "left" ? [piece, ...board.parts] : [...board.parts, piece] },
-    ];
+  const extended = board.layout
+    ? extend({ layout: board.layout, parts: board.parts }, piece, zone)
+    : undefined;
+  return extended ? [extended] : [];
+}
+
+/** Grow a two-part row into ⿲ or a two-part column into ⿳, if the zone is in line. */
+function extend(pair: Arrangement, piece: string, zone: Zone): Arrangement | undefined {
+  if (pair.parts.length !== 2) return undefined;
+  if (pair.layout === "⿰" && (zone === "left" || zone === "right")) {
+    return {
+      layout: "⿲",
+      parts: zone === "left" ? [piece, ...pair.parts] : [...pair.parts, piece],
+    };
   }
-  if (board.layout === "⿱" && (zone === "top" || zone === "bottom")) {
-    return [
-      { layout: "⿳", parts: zone === "top" ? [piece, ...board.parts] : [...board.parts, piece] },
-    ];
+  if (pair.layout === "⿱" && (zone === "top" || zone === "bottom")) {
+    return {
+      layout: "⿳",
+      parts: zone === "top" ? [piece, ...pair.parts] : [...pair.parts, piece],
+    };
   }
-  return [];
+  return undefined;
+}
+
+function withExtension(arrangement: Arrangement, extended: Arrangement | undefined): Arrangement[] {
+  return extended ? [arrangement, extended] : [arrangement];
 }
 
 /**
@@ -113,5 +135,10 @@ export function placePiece(
 }
 
 function created(result: string, arrangement: Arrangement): PlaceOutcome {
-  return { kind: "created", board: { layout: null, parts: [result] }, result, arrangement };
+  return {
+    kind: "created",
+    board: { layout: null, parts: [result], from: arrangement },
+    result,
+    arrangement,
+  };
 }

@@ -1,63 +1,121 @@
 # Deployment
 
-508 Devkit does not choose a deployment platform by default. Pick the smallest deployment shape that matches the product, team, and operational constraints.
+The game is a static site: no server, no database, no secrets. Progress lives
+in the player's browser (`localStorage`, one save per script).
 
-## Decision Record
+```bash
+bun install --frozen-lockfile
+bun run build            # -> apps/web/dist/
+```
 
-When applying this devkit to a project, record the deployment decision here:
+`apps/web/dist/` contains `index.html` plus hashed assets (JS, CSS and
+`game-data-<hash>.json`, ~170 kB gzipped). Vite is configured with
+`base: "./"`, so the build works from a domain root or any sub-path without
+changes. There is no client-side routing, so no SPA rewrite rules are needed.
 
-- Target platform:
-- Services deployed:
-- Database and storage:
-- Secrets management:
-- Preview environment strategy:
-- Rollback strategy:
-- Production health checks:
+## Caching
 
-## Common Options
+- `assets/*` file names are content-hashed: cache them for a year
+  (`Cache-Control: public, max-age=31536000, immutable`).
+- `index.html` should revalidate (`no-cache`) so players pick up new builds.
 
-| Option | Good Fit | Tradeoffs |
-| --- | --- | --- |
-| Fly.io | Small teams that want simple app hosting close to users. | Requires platform-specific config and operational familiarity. |
-| Render | Straightforward web services, workers, and managed databases. | Less control than lower-level infrastructure. |
-| Vercel or Cloudflare Pages | Frontend-first apps and edge-friendly web surfaces. | Backend, worker, and database workflows may need separate hosting. |
-| Kamal | Teams that want Docker deploys to owned servers. | Requires server operations, registry setup, and rollback discipline. |
-| Coolify | Self-hosted platform-style deploys. | Adds a platform to operate and upgrade. |
-| Kubernetes | Larger teams with existing cluster operations. | Too much machinery for most new projects. |
+## GitHub Pages (recommended)
 
-## Mobile Store Publishing
+The repo already lives on GitHub (`508-dev/anyang-chemistry`), so Pages is the
+lowest-effort host. One-time setup: **Settings → Pages → Build and deployment →
+Source: GitHub Actions**. Then add `.github/workflows/deploy.yml`:
 
-Native mobile apps aren't a deployment-platform decision at all — there's no
-server to host. If the target project selects `stacks/android`, use its
-release pipeline instead of anything in this file: `version.txt` +
-release-please decide the version, a release-PR merge is what ships it, and
-CI publishes signed builds to GitHub Releases, Google Play (internal track),
-and F-Droid (a self-hosted repo plus an optional f-droid.org submission). See
-`stacks/android/README.md` for the full model, including why the two jobs
-live in one workflow run and how signing keys are handled.
+```yaml
+name: Deploy
 
-The target repo's own `docs/deployment.md` should be rewritten to describe
-that concrete pipeline rather than keeping this file's generic
-platform-decision-record shape — see `stacks/android/README.md` → "Docs To
-Write In The Target Repo".
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
-## Workflow Guidance
+permissions:
+  contents: read
 
-Keep deployment workflows platform-specific and explicit. A project should add deploy CI only after the platform is chosen and secrets are configured.
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
-Before enabling automatic production deploys:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: 1.3.13
+      - run: bun install --frozen-lockfile
+      - run: ./scripts/check-all.sh
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: apps/web/dist
 
-1. Add a health endpoint or smoke test.
-2. Document required environment variables.
-3. Confirm rollback behavior.
-4. Keep preview deploys separate from production deploys.
-5. Use least-privilege deployment credentials.
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+```
 
-## Agent Notes
+The site appears at `https://508-dev.github.io/anyang-chemistry/`. For a
+custom domain, add it under Settings → Pages and create the DNS record GitHub
+shows; no code change is needed thanks to the relative base path. Pages sets
+its own cache headers (10 minutes for everything), which is acceptable here.
 
-- Do not infer a deployment platform from this devkit. Inspect the target repo,
-  hosting account, and team preference first.
-- Keep deployment workflows out of new repos until secrets and rollback are
-  known.
-- If deployment is undecided, leave the decision record blank rather than
-  copying placeholder platform files.
+Rollback: re-run the Deploy workflow for an earlier commit, or revert on
+`main`.
+
+## Other static hosts
+
+Any static host works with the same build command and output directory:
+
+| Host | Build command | Output dir | Notes |
+| --- | --- | --- | --- |
+| Cloudflare Pages | `bun install --frozen-lockfile && bun run build` | `apps/web/dist` | Fast in Taiwan; add a `_headers` file in `apps/web/public/` for the cache rules above. |
+| Netlify | same | `apps/web/dist` | Cache rules via `netlify.toml` `[[headers]]`. |
+| Any web server / CDN bucket | run locally or in CI | `apps/web/dist` | Upload the directory; apply the cache rules above. |
+
+Set the host's Bun version to match `packageManager` in `package.json`.
+
+## Before each release
+
+1. `./scripts/check-all.sh` passes (CI enforces this too).
+2. If `data/curated/*` changed, `data/game-data.json` was regenerated and
+   committed (CI checks this).
+3. `game-data.json` changes are safe for existing players: saves store only
+   discovered ids, and ids that no longer exist are dropped on load. Renaming
+   or removing an element does remove it from players' collections.
+4. Smoke-test the production build: `bun run --cwd apps/web preview`.
+
+## Mobile apps (planned)
+
+Android and iOS will wrap this same build with Capacitor (see
+`docs/architecture.md`). Expected steps when that starts:
+
+1. `bun add @capacitor/core @capacitor/cli` in `apps/web`, then
+   `bunx cap init` with `webDir: "dist"`.
+2. `bunx cap add android` / `bunx cap add ios`; commit the native projects.
+3. Swap `localSaveStore` for a Capacitor Preferences-backed `SaveStore`
+   (`apps/web/src/lib/storage.ts`); iOS may evict WebView `localStorage`.
+4. Bundle a Traditional Chinese font subset so glyphs look the same on every
+   device.
+5. Release through the stores (Play Console / App Store Connect), with
+   versioning and signing documented here once chosen.

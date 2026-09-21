@@ -54,6 +54,18 @@ describe("placePiece", () => {
     });
   });
 
+  it("completes a three-part row after its first pair already made something", () => {
+    // ⿰丿丨 makes 亻, but a third 丨 in line still makes 川 = ⿲丿丨丨.
+    const first = placePiece(book, { layout: null, parts: ["丿"] }, "丨", "right");
+    expect(first).toMatchObject({ kind: "created", result: "亻" });
+    expect(placePiece(book, first.board, "丨", "right")).toMatchObject({
+      kind: "created",
+      result: "川",
+    });
+    // Only in line: a vertical drop does not extend a row.
+    expect(placePiece(book, first.board, "丨", "top").kind).toBe("rejected");
+  });
+
   it("matches a base element dropped into its variant slot", () => {
     const outcome = placePiece(book, { layout: null, parts: ["木"] }, "人", "left");
     expect(outcome).toMatchObject({ kind: "created", result: "休" });

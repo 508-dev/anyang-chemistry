@@ -3,15 +3,7 @@
   "root": true,
   "files": {
     "ignoreUnknown": true,
-    "includes": [
-      "**",
-      "!**/.venv",
-      "!**/.claude",
-      "!**/.mypy_cache",
-      "!**/.pytest_cache",
-      "!data/game-data.json",
-      "!data/vendor"
-    ]
+    "includes": ["**", "!**/.claude", "!data/game-data.json", "!data/vendor"]
   },
   "formatter": {
     "enabled": true,

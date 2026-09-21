@@ -1,112 +1,65 @@
 # AI Agent Development Guide
 
+Anyang Chemistry (安陽字煉) is a Chinese-character combination game. Read
+`README.md` for the overview and `docs/architecture.md` before structural
+changes.
+
+## Audience and language
+
+- Players are mostly in Taiwan. All player-facing text is Traditional Chinese
+  using Taiwan conventions (搜尋, 載入, 資訊), usually paired with English.
+  Traditional is the default script; simplified is only an optional game mode.
+- Keep Taiwan (TC) fonts first in font stacks; regional glyph shapes differ.
+
 ## Environment
 
 - Only `python3` is guaranteed. Do not assume `python` exists.
-- Prefer package scripts and repo-provided entrypoints over raw commands. When a
-  repo uses Python, prefer `uv run`; when it uses Bun, prefer `bun run`.
-- Treat install, dev, and test commands as executable code. Inspect manifests, package scripts, lockfiles, Docker files, and setup scripts before running them in unfamiliar repos.
+- Use `bun run` for workspace scripts and the `scripts/*.sh` entrypoints.
+- Treat install, dev, and test commands as executable code. Inspect manifests
+  and scripts before running them.
 
-## Dependency Supply-Chain Safety
+## Repository shape
 
-- Bun: keep `bunfig.toml` with `minimumReleaseAge = 604800`.
-- uv: add optional `exclude-newer = "P7D"` only after confirming the local
-  `uv` version supports relative `exclude-newer` durations.
-- pnpm: keep `minimumReleaseAge: 10080` in `pnpm-workspace.yaml`.
-- Bundler: use `source "https://rubygems.org", cooldown: 7` only with Bundler
-  `4.0.13` or newer, then pin that Bundler version in `Gemfile.lock`.
-- CI should use locked installs:
-  - `bun install --frozen-lockfile`
-  - `uv sync --locked` when a Python workspace is present
-  - `pnpm install --frozen-lockfile` when pnpm is used.
-  - `bundle install` with deployment/frozen settings when Ruby is used.
-- Commit lockfiles.
+- `packages/core`: pure TypeScript engine (IDS, `RecipeBook`, board rules,
+  reachability, progress, hints). No DOM, no dependencies. This is the code a
+  native port would translate, so keep it small and portable.
+- `data`: vendored sources, curated TSVs, the generator, and the generated
+  `game-data.json` contract. See `docs/game-data.md`.
+- `apps/web`: Vite + Svelte 5 client. Presentation and persistence only.
+- `scripts`: stable entrypoints for dev, lint, typecheck, test, check-all.
+- `docs`: architecture, data pipeline, development, deployment, supply chain.
+- `.context/`: gitignored workspace-local scratch; promote durable knowledge
+  into `docs/`.
 
-## Repository Shape
+## Editing rules
 
-- `AGENTS.md`: canonical agent operating instructions.
-- `MANIFEST.md`: file inventory and template-selection checklist.
-- `DECISIONS.md`: decision authority for devkit topology and policy.
-- `docs`: contributor-facing documentation.
-- `extras`: optional workflows, deployment examples, and support add-ons.
-- `scripts`: stable project entrypoints.
-- `skills`: optional project-local agent skills.
-- `stacks/typescript`: framework-neutral Bun/TypeScript conventions.
-- `stacks/python`: optional Python API/shared-package workspace.
-- `stacks/ruby`: optional Ruby/Rails/Rack workspace conventions.
-- `stacks/android`: optional native Android (Kotlin/Compose) release and
-  publishing convention pack — no app scaffold, since app structure is too
-  product-specific to template.
-- `.context`: gitignored workspace-local scratch for Conductor and agents.
+- Read target files, callers, exports, and tests before editing.
+- Keep edits surgical; don't reformat unrelated files.
+- Game rules belong in `packages/core`, not in Svelte components.
+- Never hand-edit `data/game-data.json`. Change `data/curated/*.tsv` (or the
+  generator) and run `bun run data:build`; commit both.
+- Stroke-level recipes in `data/curated/components.tsv` are game design, not
+  etymology, but they should be guessable. Check `bun run --cwd data build
+  --report` for blockers and collisions after curation changes.
+- Changing the `GameData` shape means bumping `GAME_DATA_SCHEMA_VERSION` and
+  updating `docs/game-data.md`. Changing the save shape means bumping
+  `SAVE_SCHEMA_VERSION` and keeping old saves loadable.
+- Add or update tests when behavior changes; update docs when workflows change.
 
-## Development Workflow
+## Dependency safety
 
-- Run infrastructure with Docker Compose.
-- Run app services on the host for reload speed and debuggability.
-- Use `./scripts/worktree-ports.sh env` to inspect local ports.
-- Use `./scripts/docker-compose.sh` instead of raw `docker compose` for local worktree-safe infra.
-- Use `./scripts/dev.sh` for host-run app services.
-- Treat `apps/*` as disposable wiring examples, not framework code to cargo-cult into every project.
-- Do not assume a frontend framework from this devkit. Choose Next.js, Vite, TanStack Start, Astro, Expo, or no frontend based on the target project.
-- Keep `.worktreeinclude` as a short allowlist of ignored local config to copy into sibling worktrees, such as `.env`, `.env.local`, and `.sops.yaml`.
-- Keep `.dockerignore` in sync with the repo shape so Docker build contexts exclude secrets, local dependencies, caches, `.context/`, and generated outputs.
-
-## Editing Rules
-
-- Read target files, callers, exports, tests, and obvious shared utilities before editing.
-- When applying this devkit or cleaning up a GitHub-template-generated repo,
-  read `MANIFEST.md` and produce a selection report before editing. Cover every
-  top-level path in this devkit and the target repo with an adopt, adapt, skip,
-  delete, or defer decision and a one-line reason.
-- Keep edits surgical.
-- Do not reformat unrelated files.
-- Add or update tests when behavior changes.
-- Update `.env.example` when adding configuration.
-- Update docs when changing developer workflows.
-- When selecting the Python stack, the included examples use Pydantic for
-  settings/boundary schemas and Alembic for database migrations. Keep them when
-  they fit; replace them when the target repo has better existing choices.
-- Before adding uv cooldown config, run `uv --no-config --version`. Relative
-  `exclude-newer` values such as `P7D` require uv `0.9.17` or newer. If the
-  target machine is older, ask before upgrading uv; do not write `P7D` or
-  `7 days` into `pyproject.toml` or `uv.toml` because older uv clients fail
-  during settings discovery.
-- Before adding Bundler cooldown config, run `bundle --version`. The
-  `cooldown:` source option requires Bundler `4.0.13` or newer. If Bundler is
-  older, ask before upgrading it; do not add cooldown syntax that the target
-  repo's Bundler cannot parse.
-- When selecting the Android stack, do not assume F-Droid distribution or
-  hand-edit `versionCode`/`versionName` — see `stacks/android/README.md` for
-  the versioning model and the GPL-3/free-software-dependency constraint,
-  which only applies when the target app actually targets F-Droid.
-- The TypeScript stack includes Drizzle examples for database access. Keep
-  Drizzle when it fits; replace it when the target repo already uses another
-  data-access layer.
-- Keep secrets in environment variables or SOPS-managed files, never in code.
-
-## `.context/`
-
-Use `.context/` for workspace-local agent scratch only. Do not commit it.
-
-Durable project knowledge belongs in tracked docs:
-
-- Architecture and layout: `README.md`, `docs/template-proposal.md`, `docs/pattern-report.md`.
-- Tooling decisions: `docs/tooling.md`, `docs/supply-chain.md`.
-- Local development runbooks: `docs/development.md`.
-- Repeated failure patterns: concise tracked docs, not raw logs or transcripts.
+- Keep `bunfig.toml` `minimumReleaseAge = 604800` and commit `bun.lock`.
+- CI uses `bun install --frozen-lockfile`.
+- Pin GitHub Actions to commit SHAs. See `docs/supply-chain.md`.
 
 ## Validation
 
-Before calling work complete, run the narrowest relevant checks:
-
-```bash
-./scripts/lint.sh
-./scripts/typecheck.sh
-./scripts/test.sh
-```
-
-For broader changes, run:
+Before calling work complete:
 
 ```bash
 ./scripts/check-all.sh
 ```
+
+For UI changes, also run the production build (`bun run build && bun run
+--cwd apps/web preview`) and exercise drag and drop, tap-to-place, and both
+scripts in a browser.

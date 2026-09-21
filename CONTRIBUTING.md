@@ -1,40 +1,37 @@
 # Contributing
 
-This repository is a reference scaffold. Changes should improve conventions that apply across many projects without turning the repo into a product-specific app.
-
-## Principles
-
-- Prefer small, composable defaults over large generated frameworks.
-- Keep root files broadly useful.
-- Put language/runtime conventions in `stacks/` and team-specific, platform-specific, or workflow-heavy choices in `extras/`.
-- Preserve supply-chain cooldowns and committed lockfiles.
-- Update agent-facing guidance when conventions change.
-
-## Local Checks
-
-Run the narrowest relevant checks while iterating:
+## Setup
 
 ```bash
-./scripts/lint.sh
-./scripts/typecheck.sh
-./scripts/test.sh
+bun install
+bun run dev
 ```
 
-Before opening or updating a PR, run:
+See `docs/development.md` for the full workflow.
+
+## Kinds of contributions
+
+- **Recipes and content**: most improvements are edits to `data/curated/`:
+  new stroke-level recipes, fixes for awkward or colliding decompositions,
+  positional variants, script overrides, and trophy collections. Run
+  `bun run --cwd data build --report` to see which missing parts block the
+  most characters, and commit the regenerated `data/game-data.json` with your
+  TSV change. `docs/game-data.md` explains every file.
+- **Game rules**: `packages/core`, with tests in `packages/core/tests`.
+- **Interface**: `apps/web`. Player-facing text is Taiwan-style Traditional
+  Chinese, usually with English alongside.
+
+## Checks
 
 ```bash
 ./scripts/check-all.sh
 ```
 
-## Pull Requests
+CI runs the same checks and also fails if `data/game-data.json` is out of
+date with the curated sources.
 
-Use the PR template. Include what changed, why it belongs in the devkit, and how it was validated.
+## Pull requests
 
-Avoid committing local state such as `.venv`, `node_modules`, caches, raw logs, screenshots, and `.context/artifacts/`.
-
-## Agent Notes
-
-- Keep convention changes paired with docs and skill updates.
-- Do not turn stack examples into root defaults without explaining why the
-  convention applies across most projects.
-- Validate both the root template and any stack touched by the change.
+Use the PR template: what changed, why, and how it was validated. Add
+screenshots for UI changes. Don't commit local state (`node_modules`,
+`.context/`, logs, screenshots).

@@ -1,85 +1,63 @@
-# 508 Devkit Decisions
+# Decisions
 
-Last reviewed: 2026-06-03
+Last reviewed: 2026-09-19
 
-This is the constitution for the devkit. Use it as the decision authority; use files in this repo as examples or frozen primitives according to the decision below.
+Durable project decisions. `docs/architecture.md` has the longer reasoning.
 
-## Apply The Gold/Filler Test
+## Recipes are IDS
 
-Decision: keep and test files that agents would not reliably reproduce correctly without this repo. Treat ordinary app code as disposable examples.
+Decision: every recipe is an Ideographic Description Sequence whose parts are
+playable elements (`奶 = ⿰女乃`). Board zones map to layouts: left/right →
+⿰⿲, top/bottom → ⿱⿳, center → enclosures and overlay.
 
-Why: agents can generate plausible FastAPI handlers, workers, and frontend apps. They are less reliable at reproducing devkit-specific topology, safety policy, worktree behavior, and operational memory conventions.
+Why: IDS is the Unicode standard for character structure, existing
+dictionaries already use it, and it makes "position matters" the core rule.
 
-Deviate when: a real target repo needs product code. Generate it for that repo instead of copying placeholder app code from the devkit.
+## Portable engine and data, web-first client
 
-## Dependency Cooldowns
+Decision: `packages/core` is dependency-free TypeScript and `game-data.json`
+is the cross-platform contract. Ship the web build to Android/iOS with
+Capacitor; port `core` to Kotlin/Swift only if a fully native app is needed.
 
-Decision: use dependency cooldowns in every package manager that supports them.
+Why: one codebase for all platforms now, and a small, well-tested engine keeps
+a future native port cheap.
 
-Why: new package versions are a supply-chain risk window. The exact cooldowns are non-obvious and should converge across repos.
+## Traditional first, scripts are separate games
 
-Deviate when: a security fix or production incident requires an immediate update. Document the exception in the PR.
+Decision: traditional Chinese is the default and all UI text is Taiwan-style
+traditional. Simplified is an optional mode. Each script is its own game
+(elements of the other script removed, reachability re-run, separate saves).
 
-## Locked Installs
+Why: the audience is mostly in Taiwan, and mixing scripts cluttered the
+palette with near-duplicates.
 
-Decision: commit lockfiles and use frozen or locked installs in CI.
+## Derived state is never stored
 
-Why: agents and humans need reproducible dependency resolution.
+Decision: saves hold only the ordered discovery list; depth, end points,
+trophies and hints are derived from the data at load time.
 
-Deviate when: a repo is intentionally a library template without a runnable dependency graph. Document why no lockfile is committed.
+Why: saves stay tiny and survive data updates and script changes.
 
-## Bun First, pnpm First-Class
+## Static hosting, no backend
 
-Decision: show Bun first for JavaScript workspaces while keeping pnpm first-class for teams, repos, or large workspaces that prefer pnpm-specific monorepo behavior.
+Decision: the game is a static site with progress in the browser. See
+`docs/deployment.md`.
 
-Why: Bun is fast and simple for greenfield repos, and the author prefers it. That preference should not imply pnpm is second-class or wrong for new projects.
+Why: nothing needs a server yet; static hosting is free, fast, and has no
+secrets to manage.
 
-Deviate when: the target repo already uses pnpm, npm, Yarn, or another package manager for a clear reason. Do not churn package managers during unrelated work.
+## Dependency cooldowns and locked installs
 
-## Frontend Framework Neutrality
+Decision: seven-day cooldowns in Bun and Renovate, committed `bun.lock`,
+frozen installs in CI, SHA-pinned actions.
 
-Decision: do not choose Next.js, Vite, TanStack Start, Astro, Expo, or any other frontend framework in root defaults.
+Why: new package versions are a supply-chain risk window.
 
-Why: frontend framework choice depends on product shape, deployment target, routing, rendering model, and team familiarity.
+Deviate when: a security fix requires an immediate update; note it in the PR.
 
-Deviate when: the target repo has already chosen a framework or the user explicitly asks for one.
+## Host-run dev server with deterministic worktree ports
 
-## Host Apps, Compose Infra
+Decision: `scripts/dev.sh` runs Vite on the host with a port derived from the
+worktree path.
 
-Decision: run app processes on the host and infrastructure through Docker Compose during local development.
-
-Why: host app processes are easier for agents to inspect and faster for reload loops. Compose still provides concrete examples for local infrastructure such as databases and caches.
-
-Deviate when: deployment parity, binary dependencies, or team policy require full-container development. Put that in docs and scripts explicitly.
-
-## Deterministic Worktree Ports
-
-Decision: derive local ports from the absolute worktree path.
-
-Why: sibling worktrees should run concurrently without hand-editing `.env` files.
-
-Deviate when: a platform assigns ports dynamically. Preserve the script for local development unless it is truly irrelevant.
-
-## `.context/` Workspace Memory
-
-Decision: keep `.context/` gitignored as workspace-local operational memory for humans and agents. Do not ship it as tracked template content.
-
-Why: architecture notes, decisions, failures, runbooks, and summaries prevent repeated failed approaches and preserve local reasoning.
-
-Deviate when: information is durable, user-facing, or contributor-facing. Put that in README, docs, or official project documentation instead.
-
-## GitHub Hygiene
-
-Decision: include small issue/PR templates, least-privilege workflows, pinned action SHAs, and Renovate cooldown policy. Keep Gitleaks and Dependency Review as opt-in extras: Gitleaks can create noisy baseline findings, and Dependency Review depends on GitHub's dependency graph and is primarily vulnerability/license/change reporting rather than active supply-chain attack detection.
-
-Why: collaboration and security hygiene are broadly useful and easy to drift across repos.
-
-Deviate when: a repo does not use GitHub or has a stronger existing platform policy.
-
-## Currency
-
-Decision: the devkit owns topology and policy, not permanent version freshness.
-
-Why: frozen files age. Agents should preserve the repo's decisions while verifying current tool versions, action SHAs, and API docs when applying the devkit to a target repo.
-
-Deviate when: working fully offline. In that case, copy the known-good pinned versions and document that currency was not verified.
+Why: sibling worktrees can run concurrently without editing config.

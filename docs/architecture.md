@@ -19,7 +19,9 @@ Every recipe in the game is one IDS whose parts are all playable elements:
 
 Adding a third part: if a two-part row or column matches nothing, but some
 three-part recipe starts or ends with it, the board holds the pair so the
-player can add a third part along the same axis.
+player can add a third part along the same axis. If the pair *did* make
+something (丿 + 丨 = 亻), the board remembers that pair, so a third piece in
+line still completes a three-part character (亻 + 丨 → 川 = ⿲丿丨丨).
 
 Center drops try each enclosing layout in both directions. When several
 characters share one arrangement (人/入, 土/士, simplified/traditional pairs),

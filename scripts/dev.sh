@@ -13,15 +13,15 @@ Options:
                     if it is still listening on WEB_PORT. Adapted repos can
                     call reclaim_service_port for other host-run app services.
   --no-reclaim-ports
-                    Disable reclaiming even when DEVKIT_RECLAIM_PORTS=1.
+                    Disable reclaiming even when RECLAIM_PORTS=1.
   --help            Show this help.
 
 Environment:
-  DEVKIT_RECLAIM_PORTS=1  Same as --reclaim-ports.
+  RECLAIM_PORTS=1  Same as --reclaim-ports.
 EOF
 }
 
-RECLAIM_PORTS="${DEVKIT_RECLAIM_PORTS:-0}"
+RECLAIM_PORTS="${RECLAIM_PORTS:-0}"
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --reclaim-ports)
@@ -50,35 +50,6 @@ export WEB_HOST="${WEB_HOST:-127.0.0.1}"
 echo "Anyang Chemistry"
 echo "  Web: ${WEB_URL}"
 echo
-
-detect_js_runner() {
-  if [ -n "${DEVKIT_JS_RUNNER:-}" ]; then
-    printf '%s\n' "$DEVKIT_JS_RUNNER"
-    return
-  fi
-
-  # Keep the root script usable when a repository chooses the pnpm stack
-  # variant. The packageManager field is the strongest signal; lockfiles are a
-  # fallback for copied templates where package.json has been edited.
-  if grep -Eq '"packageManager"[[:space:]]*:[[:space:]]*"pnpm@' package.json 2>/dev/null; then
-    printf '%s\n' pnpm
-    return
-  fi
-
-  if grep -Eq '"packageManager"[[:space:]]*:[[:space:]]*"bun@' package.json 2>/dev/null; then
-    printf '%s\n' bun
-    return
-  fi
-
-  if [ -f pnpm-lock.yaml ]; then
-    printf '%s\n' pnpm
-    return
-  fi
-
-  printf '%s\n' bun
-}
-
-JS_RUNNER="$(detect_js_runner)"
 
 port_listener_pids() {
   port="$1"
@@ -129,18 +100,8 @@ is_expected_service_command() {
 is_expected_web_dev_command() {
   command_line="$1"
   case "$command_line" in
-    next\ dev*|*" next dev"*|*next-server*|\
-    vite\ *|*" vite "*|\
-    astro\ dev*|*" astro dev"*|\
-    remix\ vite:dev*|*" remix vite:dev"*|\
-    webpack\ serve*|*" webpack serve"*|\
-    rspack\ serve*|*" rspack serve"*|\
-    rsbuild\ dev*|*" rsbuild dev"*|\
-    parcel\ serve*|*" parcel serve"*|\
-    tanstack\ start*|*" tanstack start"*|\
-    tsc\ --noEmit\ --watch*|*" tsc --noEmit --watch"*|\
-    bun\ run*|*" bun run"*|\
-    pnpm\ *|*" pnpm "*)
+    vite|vite\ *|*" vite"|*" vite "*|*/vite|*/vite\ *|\
+    bun\ run*|*" bun run"*)
       return 0
       ;;
     *)
@@ -228,18 +189,7 @@ cleanup() {
 }
 trap cleanup INT TERM EXIT
 
-case "$JS_RUNNER" in
-  bun)
-    bun run --cwd apps/web dev &
-    ;;
-  pnpm)
-    pnpm -C apps/web run dev &
-    ;;
-  *)
-    echo "Unsupported DEVKIT_JS_RUNNER=${JS_RUNNER}; expected bun or pnpm." >&2
-    exit 1
-    ;;
-esac
+bun run --cwd apps/web dev &
 WEB_PID=$!
 
 wait "$WEB_PID"
