@@ -1,0 +1,10 @@
+Anyang Chemistry is an interactive chemistry learning application designed to make chemistry education engaging and accessible.
+
+Features:
+- Interactive periodic table and element explorer
+- Chemistry concepts and explanations
+- Practice problems and quizzes
+- Offline support
+- Open source and free to use
+
+Visit https://508.dev for more information.

@@ -1,13 +1,44 @@
+import java.util.Properties
+
 apply plugin: 'com.android.application'
 
+// CI supplies signing material via environment variables; local builds may use
+// the gitignored properties file. Partial configuration must never ship unsigned.
+def releaseSigning = {
+    def env = [
+        storeFile: System.getenv('ANYANG_CHEMISTRY_KEYSTORE_FILE'),
+        storePassword: System.getenv('ANYANG_CHEMISTRY_KEYSTORE_PASSWORD'),
+        keyAlias: System.getenv('ANYANG_CHEMISTRY_KEY_ALIAS'),
+        keyPassword: System.getenv('ANYANG_CHEMISTRY_KEY_PASSWORD'),
+    ]
+    def file = rootProject.file("keystore.properties")
+    def material = null
+    if (env.values().any { it != null }) {
+        material = env
+    } else if (file.exists()) {
+        def props = new Properties()
+        props.load(new FileInputStream(file))
+        material = [
+            storeFile: props.getProperty('storeFile'),
+            storePassword: props.getProperty('storePassword'),
+            keyAlias: props.getProperty('keyAlias'),
+            keyPassword: props.getProperty('keyPassword'),
+        ]
+    }
+    if (material && !material.values().any { !it }) {
+        return material
+    }
+    return null
+}()
+
 android {
-    namespace = "io.github.anyangchemistry"
+    namespace = "dev.co508.anyangchemistry"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "io.github.anyangchemistry"
+        applicationId "dev.co508.anyangchemistry"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        versionCode 1000
         versionName "0.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -18,9 +49,27 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (releaseSigning) {
+                signingConfig signingConfigs.create("release", {
+                    storeFile rootProject.file(releaseSigning.storeFile)
+                    storePassword releaseSigning.storePassword
+                    keyAlias releaseSigning.keyAlias
+                    keyPassword releaseSigning.keyPassword
+                })
+            }
         }
+        debug {
+            applicationIdSuffix ".debug"
+        }
+    }
+
+    // F-Droid builds must not include Google's opaque dependency metadata.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
     }
 }
 

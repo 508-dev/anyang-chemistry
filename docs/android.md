@@ -46,10 +46,12 @@ native source, Gradle wrapper, Capacitor config, manifests, and `bun.lock`.
 
 ## Identity and persistence
 
-The provisional application ID is `io.github.anyangchemistry`; choose the
-permanent ID before the first public release. Android's `versionCode` and
-`versionName` are explicit in `apps/web/android/app/build.gradle`, initially
-`1` and `0.1.0`. Every public update will need a higher `versionCode`.
+The application ID is `dev.co508.anyangchemistry`. Android's `versionCode` and
+`versionName` are derived from `version.txt` by `scripts/sync-version.sh`:
+- `versionCode`: Computed as `major * 1000000 + minor * 1000 + patch` (e.g., 0.1.0 → 1000)
+- `versionName`: Taken directly from version.txt
+
+See [android-release.md](android-release.md) for version management and release workflow details.
 
 On Android, `@capacitor/preferences` stores discoveries and the selected
 繁/簡 script in native SharedPreferences. The website continues using its
@@ -119,14 +121,24 @@ Physical-device validation remains pending: the offered USB phone was not
 visible to ADB during this verification. Bundled fonts are still a later
 milestone, so glyph appearance depends on the device's installed fonts.
 
-## Later milestones
+## Releases and Publishing
 
-This first Android slice stops at local APK creation and parity verification.
+Releases are automated via the `.github/workflows/release.yml` workflow:
+
+1. Merge a PR to `main` → release-please opens a "chore(main): release X.Y.Z" PR
+2. Review and merge the PR → workflow tags vX.Y.Z and builds signed APK/AAB
+3. Artifacts are attached to the GitHub Release
+4. Optionally publishes to Google Play (internal track) and/or F-Droid
+
+**Setup required:**
+- [Configure signing secrets](android-release.md#github-secrets-setup)
+- [Google Play credentials](android-release.md#optional-google-play-publishing) (optional)
+- [F-Droid publishing](android-release.md#optional-fdroid-publishing) (optional)
+
+For full details, see [android-release.md](android-release.md).
+
+## Later Milestones
+
 The launcher/splash assets are still Capacitor placeholders. Bundled Taiwan
-fonts, artwork, automated CI APK artifacts, release signing, store listings,
-Play upload, and F-Droid submission are follow-up work.
-
-Keep the runtime free of proprietary SDKs for F-Droid. Before public releases,
-choose a signing strategy across Play, direct APKs, and F-Droid, and prove the
-full Bun/Vite/Gradle build in F-Droid's environment. A lockfile alone does not
-prove reproducible APKs. See [deployment.md](deployment.md).
+fonts and artwork are follow-up work. Keep the runtime free of proprietary SDKs
+for F-Droid compliance.
