@@ -11,7 +11,7 @@ import {
   type Zone,
 } from "@anyang/core";
 import gameDataUrl from "@anyang/data/game-data.json?url";
-import { localSaveStore, type SaveStore } from "./storage";
+import { type SaveStore, saveStore } from "./storage";
 
 export type Notice =
   | { key: number; kind: "discovery"; id: string }
@@ -32,7 +32,7 @@ function fetchGameData(): Promise<GameData> {
 /** A game plays one script; the other script's characters do not exist in it. */
 export async function loadGame(
   script: Script,
-  store: SaveStore = localSaveStore(script),
+  store: SaveStore = saveStore(script),
 ): Promise<Game> {
   const book = new RecipeBook(await fetchGameData(), { script });
   return new Game(book, store, Progress.restore(book, await store.load()));
@@ -50,6 +50,7 @@ export class Game {
   unseen = $state.raw(new Set<string>());
   notices = $state<Notice[]>([]);
   feedback = $state.raw<Feedback>(null);
+  saveFailed = $state(false);
 
   private nextKey = 1;
 
@@ -117,6 +118,7 @@ export class Game {
 
   async reset(): Promise<void> {
     await this.store.clear();
+    this.saveFailed = false;
     this.progress = Progress.start(this.book);
     this.unseen = new Set();
     this.selected = null;
@@ -134,6 +136,15 @@ export class Game {
         this.notices.push({ key: this.nextKey++, kind: "achievement", achievement });
       }
     }
-    void this.store.save(this.progress.toSave());
+    void this.persist();
+  }
+
+  async persist(): Promise<void> {
+    try {
+      await this.store.save(this.progress.toSave());
+      this.saveFailed = false;
+    } catch {
+      this.saveFailed = true;
+    }
   }
 }

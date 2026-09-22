@@ -104,6 +104,7 @@ const ids = $derived.by(() => {
   }
   .controls {
     display: flex;
+    flex-shrink: 0;
     gap: 0.4rem;
   }
   input {
@@ -112,6 +113,7 @@ const ids = $derived.by(() => {
   }
   .filters {
     display: flex;
+    flex-shrink: 0;
     gap: 0.3rem;
     overflow-x: auto;
   }

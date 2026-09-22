@@ -1,51 +1,83 @@
 import type { SaveState, Script } from "@anyang/core";
+import { Capacitor } from "@capacitor/core";
+import { Preferences } from "@capacitor/preferences";
 
-/**
- * Where progress lives. Async so a native shell can swap in its own key-value
- * store (e.g. Capacitor Preferences) without touching the game code.
- */
 export interface SaveStore {
   load(): Promise<unknown>;
   save(state: SaveState): Promise<void>;
   clear(): Promise<void>;
 }
 
-const PREFIX = "anyang-chemistry";
-/** Saves from before the script toggle were mixed-script; they seed the simplified slot. */
-const LEGACY_KEY = `${PREFIX}:save`;
+export interface KeyValueStore {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string): Promise<void>;
+  remove(key: string): Promise<void>;
+}
 
-/** Each script is its own game with its own save. */
-export function localSaveStore(script: Script): SaveStore {
-  const key = `${PREFIX}:save:${script}`;
+const PREFIX = "anyang-chemistry";
+/** Saves from before the script toggle seed only the simplified slot. */
+const LEGACY_KEY = `${PREFIX}:save`;
+const SCRIPT_KEY = `${PREFIX}:script`;
+
+/** Share save keys and compatibility rules between the browser and native app. */
+export function createStorage(backend: KeyValueStore) {
+  // Native writes are asynchronous. Preserve discovery/reset/switch ordering,
+  // including across different SaveStore instances for the same script.
+  let pending: Promise<unknown> = Promise.resolve();
+  function ordered<T>(operation: () => Promise<T>): Promise<T> {
+    const result = pending.then(operation);
+    pending = result.catch(() => undefined);
+    return result;
+  }
+
   return {
-    async load() {
-      const text =
-        localStorage.getItem(key) ??
-        (script === "simplified" ? localStorage.getItem(LEGACY_KEY) : null);
-      if (text === null) return undefined;
-      try {
-        return JSON.parse(text);
-      } catch {
-        return undefined;
-      }
+    forScript(script: Script): SaveStore {
+      const key = `${PREFIX}:save:${script}`;
+      return {
+        load: () =>
+          ordered(async () => {
+            const text =
+              (await backend.get(key)) ??
+              (script === "simplified" ? await backend.get(LEGACY_KEY) : null);
+            if (text === null) return undefined;
+            try {
+              return JSON.parse(text) as unknown;
+            } catch {
+              return undefined;
+            }
+          }),
+        save: (state) => {
+          const text = JSON.stringify(state);
+          return ordered(() => backend.set(key, text));
+        },
+        clear: () =>
+          ordered(async () => {
+            await backend.remove(key);
+            if (script === "simplified") await backend.remove(LEGACY_KEY);
+          }),
+      };
     },
-    async save(state) {
-      localStorage.setItem(key, JSON.stringify(state));
-    },
-    async clear() {
-      localStorage.removeItem(key);
-      if (script === "simplified") localStorage.removeItem(LEGACY_KEY);
-    },
+    loadScript: (): Promise<Script> =>
+      ordered(async () =>
+        (await backend.get(SCRIPT_KEY)) === "simplified" ? "simplified" : "traditional",
+      ),
+    saveScript: (script: Script): Promise<void> => ordered(() => backend.set(SCRIPT_KEY, script)),
   };
 }
 
-const SCRIPT_KEY = `${PREFIX}:script`;
+const browserStore: KeyValueStore = {
+  get: async (key) => localStorage.getItem(key),
+  set: async (key, value) => localStorage.setItem(key, value),
+  remove: async (key) => localStorage.removeItem(key),
+};
 
-/** Traditional by default: most players are in Taiwan. */
-export function loadScript(): Script {
-  return localStorage.getItem(SCRIPT_KEY) === "simplified" ? "simplified" : "traditional";
-}
+const nativeStore: KeyValueStore = {
+  get: async (key) => (await Preferences.get({ key })).value,
+  set: (key, value) => Preferences.set({ key, value }),
+  remove: (key) => Preferences.remove({ key }),
+};
 
-export function saveScript(script: Script): void {
-  localStorage.setItem(SCRIPT_KEY, script);
-}
+const storage = createStorage(Capacitor.isNativePlatform() ? nativeStore : browserStore);
+export const saveStore = storage.forScript;
+export const loadScript = storage.loadScript;
+export const saveScript = storage.saveScript;

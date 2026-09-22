@@ -105,17 +105,19 @@ Set the host's Bun version to match `packageManager` in `package.json`.
    or removing an element does remove it from players' collections.
 4. Smoke-test the production build: `bun run --cwd apps/web preview`.
 
-## Mobile apps (planned)
+## Android app
 
-Android and iOS will wrap this same build with Capacitor (see
-`docs/architecture.md`). Expected steps when that starts:
+The Capacitor Android app lives in `apps/web/android/` and packages the same
+web build. Run `bun run android:build` to produce a local debug APK. See
+[android.md](android.md) for prerequisites, device testing, save behavior,
+and the parity checklist.
 
-1. `bun add @capacitor/core @capacitor/cli` in `apps/web`, then
-   `bunx cap init` with `webDir: "dist"`.
-2. `bunx cap add android` / `bunx cap add ios`; commit the native projects.
-3. Swap `localSaveStore` for a Capacitor Preferences-backed `SaveStore`
-   (`apps/web/src/lib/storage.ts`); iOS may evict WebView `localStorage`.
-4. Bundle a Traditional Chinese font subset so glyphs look the same on every
-   device.
-5. Release through the stores (Play Console / App Store Connect), with
-   versioning and signing documented here once chosen.
+Store publishing is not configured yet. The intended paths are a signed APK
+for direct downloads, an Android App Bundle for Play, and a source-build
+recipe submitted to F-Droid. Before the first public release, finalize the
+application ID, signing identity, and versioning policy. CI build artifacts,
+release signing, and store upload credentials are separate follow-up work.
+
+The Android project contains no Google Services plugin configuration. Keep
+new runtime dependencies compatible with F-Droid's inclusion requirements.
+An iOS wrapper remains planned.

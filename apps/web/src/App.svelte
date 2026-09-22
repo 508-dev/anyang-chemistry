@@ -1,5 +1,8 @@
 <script lang="ts">
 import { type Script, score } from "@anyang/core";
+import { App as NativeApp } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
+import { onMount } from "svelte";
 import Board from "./components/Board.svelte";
 import Details from "./components/Details.svelte";
 import Notices from "./components/Notices.svelte";
@@ -7,22 +10,42 @@ import Palette from "./components/Palette.svelte";
 import Trophies from "./components/Trophies.svelte";
 import { drag } from "./lib/drag.svelte";
 import { loadGame } from "./lib/game.svelte";
-import { loadScript, saveScript } from "./lib/storage";
+import { saveScript } from "./lib/storage";
 
 // Each script is a separate game: the other script's characters don't exist in
 // it, and progress is saved per script.
-let script = $state<Script>(loadScript());
+let { initialScript }: { initialScript: Script } = $props();
+// The saved script is a bootstrap value; subsequent changes belong to this component.
+// svelte-ignore state_referenced_locally
+let script = $state<Script>(initialScript);
 const loading = $derived(loadGame(script));
 let showTrophies = $state(false);
+let scriptSaveFailed = $state(false);
+
+onMount(() => {
+  if (Capacitor.getPlatform() !== "android") return;
+  const listener = NativeApp.addListener("backButton", () => {
+    if (showTrophies) showTrophies = false;
+    else void NativeApp.minimizeApp();
+  });
+  return () => {
+    void listener.then((handle) => handle.remove());
+  };
+});
 
 const SCRIPTS: { value: Script; label: string; title: string }[] = [
   { value: "traditional", label: "繁", title: "繁體 Traditional" },
   { value: "simplified", label: "簡", title: "簡體 Simplified" },
 ];
 
-function chooseScript(next: Script) {
-  script = next;
-  saveScript(next);
+async function chooseScript(next: Script) {
+  try {
+    await saveScript(next);
+    script = next;
+    scriptSaveFailed = false;
+  } catch {
+    scriptSaveFailed = true;
+  }
 }
 </script>
 
@@ -54,6 +77,16 @@ function chooseScript(next: Script) {
       </button>
     </header>
 
+    {#if scriptSaveFailed}
+      <p class="save-error" role="alert">無法儲存語文設定，請再試一次。· Could not save script preference.</p>
+    {/if}
+    {#if game.saveFailed}
+      <p class="save-error" role="alert">
+        無法儲存進度 · Could not save progress.
+        <button type="button" onclick={() => game.persist()}>重試 Retry</button>
+      </p>
+    {/if}
+
     <main>
       <div class="play">
         <Board {game} />
@@ -84,7 +117,7 @@ function chooseScript(next: Script) {
     display: flex;
     flex-direction: column;
     height: 100dvh;
-    padding: max(0.6rem, env(safe-area-inset-top)) 0.8rem max(0.4rem, env(safe-area-inset-bottom));
+    padding: max(0.6rem, env(safe-area-inset-top)) max(0.8rem, env(safe-area-inset-right)) max(0.4rem, env(safe-area-inset-bottom)) max(0.8rem, env(safe-area-inset-left));
     gap: 0.6rem;
   }
   .top {
@@ -145,6 +178,9 @@ function chooseScript(next: Script) {
     align-items: center;
     min-height: 0;
   }
+  .play :global(.board) {
+    max-width: min(34rem, 100%, calc((100dvh - 6rem) / 1.08));
+  }
   .side {
     display: flex;
     flex-direction: column;
@@ -155,6 +191,11 @@ function chooseScript(next: Script) {
     text-align: center;
     margin-top: 30vh;
     color: var(--muted);
+  }
+  .save-error {
+    margin: 0;
+    color: var(--accent);
+    font-size: 0.85rem;
   }
   .drag-ghost {
     position: fixed;
@@ -170,7 +211,7 @@ function chooseScript(next: Script) {
     border: 1px solid var(--accent-soft);
     box-shadow: 0 8px 22px rgb(60 40 20 / 0.25);
   }
-  @media (max-width: 760px) {
+  @media (max-width: 760px) and (orientation: portrait) {
     main {
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows: auto minmax(0, 1fr);

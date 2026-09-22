@@ -63,19 +63,20 @@ The construction board has five drop zones around the current piece:
 ```
 packages/core/   engine: IDS, RecipeBook, board rules, reachability, progress, hints
 data/            vendored sources, curated TSVs, generator, generated game-data.json
-apps/web/        Vite + Svelte 5 client
+apps/web/        Vite + Svelte 5 client and Capacitor Android project
 scripts/         dev, lint, typecheck, test, check-all entrypoints
 docs/            architecture, data, development, deployment, supply chain
 ```
 
-The engine and the JSON data are deliberately platform-neutral: the planned
-Android/iOS apps wrap the same web build with Capacitor, and a fully native
+The engine and the JSON data are deliberately platform-neutral: the Android
+app wraps the same web build with Capacitor (iOS is planned), and a fully native
 port would only need to translate the small `packages/core` engine.
 
 ## Documentation
 
 - [docs/architecture.md](docs/architecture.md): design, board rules, scripts, hints, mobile plan
 - [docs/game-data.md](docs/game-data.md): data pipeline and the `game-data.json` contract
+- [docs/android.md](docs/android.md): Android builds, device testing, and native saves
 - [docs/development.md](docs/development.md): local workflow, ports, content changes
 - [docs/deployment.md](docs/deployment.md): static hosting (GitHub Pages and others), release checklist
 - [docs/supply-chain.md](docs/supply-chain.md): dependency and CI safety
@@ -91,9 +92,10 @@ Netlify, cache headers, and a pre-release checklist.
 
 ## Status and roadmap
 
-Playable web version. Next up:
+Playable web version and a local Capacitor Android build (`bun run android:build`).
+See [docs/android.md](docs/android.md) for setup. Next up:
 
-- Capacitor wrappers for Android and iOS, with a Preferences-backed save store.
+- Android release automation and store distribution; a Capacitor wrapper for iOS.
 - A bundled Traditional Chinese font subset so rare components render
   identically everywhere.
 - A multi-character word tier (火 + 山 → 火山).

@@ -69,6 +69,8 @@ function slot(layout: Layout, index: number, count: number): string {
 
 <style>
   .howto {
+    min-height: 0;
+    overflow: auto;
     padding: 0.5rem 0.7rem;
     border: 1px dashed var(--accent-soft);
     border-radius: 0.8rem;

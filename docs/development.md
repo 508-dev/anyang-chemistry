@@ -50,6 +50,12 @@ build. Useful things to check by hand after UI changes:
 - Both scripts (繁 / 簡); each keeps its own save in `localStorage`.
 - A single character in the search box shows its construction tree.
 
+## Android
+
+`bun run android:build` packages the production web build into a debug APK.
+`bun run android:run` installs it on a device or emulator. See
+[android.md](android.md) for the JDK/SDK setup and native parity checks.
+
 ## Worktrees and workspace notes
 
 `.worktreeinclude` lists ignored local files copied into new sibling

@@ -104,8 +104,10 @@ Why:
   native Kotlin/Compose or Swift/SwiftUI, porting `core` is a single,
   well-bounded LLM translation, checked against the same `game-data.json`
   and a port of `packages/core/tests`.
-- Persistence already goes through an async `SaveStore`. The Capacitor
-  version only needs a Preferences-backed store.
+- Persistence goes through an async `SaveStore`. Android uses Capacitor
+  Preferences for progress and the script setting; web uses localStorage.
+  Both share keys, legacy-save handling, and an ordered operation queue.
+  The Android project and device checklist are described in [android.md](android.md).
 
 Alternatives considered:
 

@@ -19,7 +19,11 @@
     "typecheck": "bun run --filter '*' typecheck",
     "test": "bun run --filter '*' test",
     "check": "./scripts/check-all.sh",
-    "ports": "./scripts/worktree-ports.sh env"
+    "ports": "./scripts/worktree-ports.sh env",
+    "android:sync": "./scripts/android.sh sync",
+    "android:build": "./scripts/android.sh build",
+    "android:run": "./scripts/android.sh run",
+    "android:open": "./scripts/android.sh open"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.13",
