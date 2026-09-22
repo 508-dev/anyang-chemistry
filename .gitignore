@@ -9,3 +9,8 @@ dist/
 build/
 coverage/
 *.log
+
+# Android signing material
+*.keystore
+*.jks
+keystore.properties

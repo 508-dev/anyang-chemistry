@@ -105,19 +105,25 @@ Set the host's Bun version to match `packageManager` in `package.json`.
    or removing an element does remove it from players' collections.
 4. Smoke-test the production build: `bun run --cwd apps/web preview`.
 
-## Android app
+## Android App Release & Publishing
 
 The Capacitor Android app lives in `apps/web/android/` and packages the same
 web build. Run `bun run android:build` to produce a local debug APK. See
 [android.md](android.md) for prerequisites, device testing, save behavior,
 and the parity checklist.
 
-Store publishing is not configured yet. The intended paths are a signed APK
-for direct downloads, an Android App Bundle for Play, and a source-build
-recipe submitted to F-Droid. Before the first public release, finalize the
-application ID, signing identity, and versioning policy. CI build artifacts,
-release signing, and store upload credentials are separate follow-up work.
+### Automated Release Workflow
 
-The Android project contains no Google Services plugin configuration. Keep
-new runtime dependencies compatible with F-Droid's inclusion requirements.
-An iOS wrapper remains planned.
+Releases are automated via the `.github/workflows/release.yml` workflow:
+
+1. Merge a PR to `main` → release-please opens a "chore(main): release X.Y.Z" PR
+2. Review the PR (it updates `version.txt`, `CHANGELOG.md`, and derived files)
+3. Merge the PR → workflow tags vX.Y.Z and builds signed APK/AAB
+4. Artifacts are attached to the GitHub Release
+5. Optionally publishes to Google Play (internal track) and/or F-Droid
+
+For full setup and troubleshooting, see [android-release.md](android-release.md).
+
+The application ID is `dev.co508.anyangchemistry`. The Android project contains
+no Google Services plugin configuration. Keep new runtime dependencies
+compatible with F-Droid's inclusion requirements. An iOS wrapper remains planned.
