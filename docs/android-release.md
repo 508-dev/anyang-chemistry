@@ -105,19 +105,39 @@ The release workflow needs these secrets configured in your GitHub repository (S
 
 Set up at the **repository level** or in a **Prod environment** (recommended):
 
-- `RELEASE_KEYSTORE_BASE64`: Your release keystore as base64
-  ```bash
-  base64 -w 0 release.keystore
-  ```
-- `RELEASE_KEYSTORE_PASSWORD`: Keystore password
-- `RELEASE_KEY_ALIAS`: Key alias inside the keystore
-- `RELEASE_KEY_PASSWORD`: Key password
+Generate a key dedicated to this app — never reuse another app's keystore,
+since the signing key is permanent identity tied to this app's package name:
+
+```bash
+keytool -genkeypair -v -keystore release.keystore -alias anyang-chemistry \
+  -keyalg RSA -keysize 2048 -validity 10000
+base64 -w 0 release.keystore
+```
+
+- `RELEASE_KEYSTORE_BASE64`: the `base64 -w 0` output above
+- `RELEASE_KEYSTORE_PASSWORD`: keystore password
+- `RELEASE_KEY_ALIAS`: key alias inside the keystore (`anyang-chemistry` above)
+- `RELEASE_KEY_PASSWORD`: same value as `RELEASE_KEYSTORE_PASSWORD` — PKCS12 keystores have no separate key password
+
+Store these in `pass` under `508/android/anyang-chemistry/`, one entry per
+secret, **named exactly as the secret appears in GitHub** (not a shorthand —
+`pass show 508/android/anyang-chemistry/<SECRET_NAME>` should always work):
+
+```bash
+pass insert 508/android/anyang-chemistry/RELEASE_KEYSTORE_BASE64
+pass insert 508/android/anyang-chemistry/RELEASE_KEYSTORE_PASSWORD
+pass insert 508/android/anyang-chemistry/RELEASE_KEY_ALIAS
+pass insert 508/android/anyang-chemistry/RELEASE_KEY_PASSWORD
+pass insert 508/android/anyang-chemistry/RELEASE_PLEASE_TOKEN
+```
 
 ### Optional: Release-Please Token
 
 For better PR experience (so release PRs trigger CI):
 
-- `RELEASE_PLEASE_TOKEN`: A GitHub PAT with `contents:write` and `pull-requests:write`
+- `RELEASE_PLEASE_TOKEN`: a **fine-grained personal access token**, scoped to
+  this repository only, with exactly **Contents: Read and write** and
+  **Pull requests: Read and write**.
 
 Without this, release-please falls back to GITHUB_TOKEN (which works but PRs won't trigger CI).
 
