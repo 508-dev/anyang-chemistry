@@ -127,3 +127,9 @@ For full setup and troubleshooting, see [android-release.md](android-release.md)
 The application ID is `dev.co508.anyangchemistry`. The Android project contains
 no Google Services plugin configuration. Keep new runtime dependencies
 compatible with F-Droid's inclusion requirements. An iOS wrapper remains planned.
+
+### Per-branch beta builds
+
+Branches other than `main` get an installable **Anyang Chemistry Beta** build
+published as a GitHub pre-release, so work can be tested on a device before it
+is merged. See [beta-builds.md](beta-builds.md).

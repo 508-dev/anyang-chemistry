@@ -31,6 +31,22 @@ def releaseSigning = {
     return null
 }()
 
+// Beta signing is CI-only and deliberately independent of the release key. With
+// no beta credentials the build type falls back to the debug key, so a local or
+// fork build still compiles. See docs/beta-builds.md.
+def betaSigning = {
+    def env = [
+        storeFile: System.getenv('ANYANG_BETA_KEYSTORE_FILE'),
+        storePassword: System.getenv('ANYANG_BETA_KEYSTORE_PASSWORD'),
+        keyAlias: System.getenv('ANYANG_BETA_KEY_ALIAS'),
+        keyPassword: System.getenv('ANYANG_BETA_KEY_PASSWORD'),
+    ]
+    if (env.values().every { it != null && !it.trim().isEmpty() }) {
+        return env
+    }
+    return null
+}()
+
 android {
     namespace = "dev.co508.anyangchemistry"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -64,12 +80,46 @@ android {
         debug {
             applicationIdSuffix ".debug"
         }
+        beta {
+            initWith release
+            applicationIdSuffix ".beta"
+            // Capacitor and its plugin modules only define debug/release, so
+            // point beta's fallbacks at release or dependency resolution fails.
+            matchingFallbacks = ['release']
+            if (betaSigning) {
+                signingConfig signingConfigs.create("beta", {
+                    storeFile rootProject.file(betaSigning.storeFile)
+                    storePassword betaSigning.storePassword
+                    keyAlias betaSigning.keyAlias
+                    keyPassword betaSigning.keyPassword
+                })
+            } else {
+                signingConfig signingConfigs.getByName("debug")
+            }
+        }
     }
 
     // F-Droid builds must not include Google's opaque dependency metadata.
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
+    }
+}
+
+// Keep defaultConfig's generated literals untouched for F-Droid — CI overrides
+// only the beta outputs, using its monotonically increasing workflow run number.
+androidComponents {
+    onVariants(selector().withBuildType("beta")) { variant ->
+        def versionCode = System.getenv('ANYANG_BETA_VERSION_CODE')
+        def versionName = System.getenv('ANYANG_BETA_VERSION_NAME')
+        variant.outputs.each { output ->
+            if (versionCode != null) {
+                output.versionCode.set(versionCode.toInteger())
+            }
+            if (versionName != null) {
+                output.versionName.set(versionName)
+            }
+        }
     }
 }
 
