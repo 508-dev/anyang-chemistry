@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Beta builds get an orange launcher background so they read as clearly
+         distinct from the white production icon at a glance. -->
+    <color name="ic_launcher_background">#E65100</color>
+</resources>

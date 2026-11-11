@@ -158,6 +158,22 @@ To auto-publish to the self-hosted F-Droid repository:
 
 The workflow uses the same signing key as the APK itself, so no additional secrets are needed.
 
+### Beta Builds
+
+Per-branch beta builds (`.github/workflows/beta.yml`) are signed with a key
+that is independent of the release key, so arbitrary branches never touch the
+`Prod` environment:
+
+- `BETA_KEYSTORE_BASE64`: `base64 -w 0` of the beta keystore
+- `BETA_KEYSTORE_PASSWORD`: beta keystore password
+- `BETA_KEY_ALIAS`: key alias inside the beta keystore (`anyang-chemistry-beta`)
+- `BETA_KEY_PASSWORD`: same value as `BETA_KEYSTORE_PASSWORD` — PKCS12 keystores have no separate key password
+
+The beta key already exists at `~/.config/anyang-chemistry-beta/` with alias
+`anyang-chemistry-beta`. If the beta secrets are unset (e.g. on a fork), the
+workflow still compiles `assembleBeta` and skips publishing. See
+[beta-builds.md](beta-builds.md).
+
 ## Store Metadata
 
 App store listings (Google Play, F-Droid) read from `fastlane/metadata/android/`:

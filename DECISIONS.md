@@ -61,3 +61,20 @@ Decision: `scripts/dev.sh` runs Vite on the host with a port derived from the
 worktree path.
 
 Why: sibling worktrees can run concurrently without editing config.
+
+## Per-branch betas have their own identity and key
+
+Decision: pushes to any branch other than `main`, `gh-pages`, and
+`release-please--...` build an installable **Anyang Chemistry Beta** APK that
+sits beside the production app rather than replacing it. The `beta` build type
+adds the `.beta` application ID suffix, overrides the app name and launcher
+background, and inherits the release configuration (R8, resource shrinking).
+
+Why: the easiest way to test work on a device is to install it alongside the
+shipping app. Betas get their own signing key because a workflow that runs for
+arbitrary branches must never have the release key; losing the beta key only
+means beta users uninstall and reinstall. Each build uses the workflow run
+number as its `versionCode` (it increases across branches), so a new APK always
+installs over the previous beta. This is an output-level override only — the
+generated production `versionCode`/`versionName` literals stay unchanged for
+F-Droid's regex-based update bot. See `docs/beta-builds.md`.
